@@ -1,0 +1,273 @@
+﻿<Window x:Class="vvcx.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:vvcx"
+        xmlns:m="clr-namespace:Microsoft.Maps.MapControl.WPF;assembly=Microsoft.Maps.MapControl.WPF"
+        Background="#5D5C61"
+        mc:Ignorable="d"
+        Title="TSP z algorytmem genetycznym" Height="700" Width="1500">
+
+    <Grid x:Name="mainGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="1.7*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1.5*"/>
+            <ColumnDefinition Width="1.5*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1.3*"/>
+            <ColumnDefinition Width="20"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="1.2*"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="20"/>
+        </Grid.RowDefinitions>
+
+
+        <m:Map  x:Name="myMap" ClipToBounds="True" Center="51.1,17.0333" ZoomLevel="12" 
+                 Grid.ColumnSpan="8" Grid.RowSpan="14" 
+                CredentialsProvider="t0rpcLo2qrFih6XYw9HW~LnPj6A47KttiWvGItlMh6Q~AlxR_MQipzzPv_DumNyNBtsPlCrjm3t8GApisOF17CcIxTqdamcHa7CyKMPrcjl0" 
+                Background="#FF004C81" Foreground="#FFDA0000"/>
+
+        <TextBlock x:Name="workPlaceLocationLabel" Visibility="Visible" Opacity="1" Grid.Row="1" Grid.Column="1"
+                   Text="Lokalizacja budowy" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                   TextAlignment="Center" FontSize="17" Background="#FF74007A"  Foreground="White"
+                   Padding="3 3 3 3" />
+
+        <StackPanel x:Name="workPlacePanel"  Grid.Row="2" Grid.Column="1"  >
+
+            <StackPanel.Background>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </StackPanel.Background>
+
+            <TextBlock Opacity ="1" Text="Podaj lokalizację budowy" FontSize="13" Foreground="White"
+                       Margin="5 10 0 5" />
+            <TextBlock Opacity ="1" Text="według wzoru: Miejscowość, Adres" FontSize="13"
+                       Foreground="#FFC9C2C2" Margin="5 0 0 5" />
+            <TextBox Opacity="2" x:Name="searchWorkPlace" Height="25" Margin="5 0 5 10"/>
+
+            <Button x:Name="searchWorkPlaceButton" Opacity="1" Content="Dodaj" Background="#FF1359D3"
+                    BorderBrush="#FF1359D3" Foreground="White" Margin="5 0 5 5"
+                    Click="searchWorkPlaceButtonClicked" />
+        </StackPanel>
+
+
+        <TextBlock x:Name="addedPointsLabel" Visibility="Collapsed" Grid.Row="1" Grid.Column="1"
+                   Text="Złożone zamówienia" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                   TextAlignment="Center" FontSize="17" Background="#FF74007A"  Foreground="White"
+                   Padding="3 3 3 3"/>
+
+        <ListBox x:Name="addedPoints" Visibility="Visible" HorizontalContentAlignment="Stretch" ItemsSource="{Binding OrdersList}"
+                 Grid.Row="2" Grid.Column="1" Grid.RowSpan="8">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Vertical" Background="#FF323232" HorizontalAlignment="Stretch">
+                        <StackPanel Orientation="Horizontal" Background="#FF323232" HorizontalAlignment="Stretch">
+                            <TextBlock Text="" TextAlignment="Center" FontSize="15" Foreground="White"
+                                   Width="20" Padding="2 2 2 2"  Background="#FF74007A"/>
+                            <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White"
+                                       Padding="7 2 2 2" Text="{Binding Name}"/>
+                        </StackPanel>
+
+                        <ListBox x:Name="addedPoints1" Visibility="Visible" HorizontalContentAlignment="Stretch" ItemsSource="{Binding OrderedProducts}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Background="#FF323232" HorizontalAlignment="Stretch">
+                                        <TextBlock FontSize="15" Width="220" HorizontalAlignment="Stretch"  Foreground="White" Background="#FF74007A"
+                                       Padding="7 2 2 2" Text="{Binding Item1}"/>
+                                        <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White"
+                                       Padding="7 2 2 2" Text="{Binding Item2}"/>
+                                        <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White"
+                                       Padding="0 2 2 2" Text=" Kg"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+
+                            <ListBox.Background>
+                                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+                            </ListBox.Background>
+                            <ListBox.BorderBrush>
+                                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+                            </ListBox.BorderBrush>
+                        </ListBox>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+
+            <ListBox.Background>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </ListBox.Background>
+
+            <ListBox.BorderBrush>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </ListBox.BorderBrush>
+            
+        </ListBox>
+
+        <StackPanel x:Name="algStackPanel" Visibility="Visible" Grid.Column="1" Grid.Row="10">
+            
+            <StackPanel Grid.Column="1" Grid.Row="9">
+                
+                <StackPanel.Background>
+                    <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+                </StackPanel.Background>
+                
+                <Button x:Name="startAlg" Content="Wyznacz trasę" BorderBrush="#FF1359D3"
+                        Margin="5 0 5 5" Background="#FF1359D3" Foreground="White"
+                        VerticalAlignment="Stretch" Click="startAlgorytmClicked" />
+                <Button x:Name="removePoints" Content="Usuń punkty" BorderBrush="#FFC50000"
+                        Margin="5 0 5 5" Background="#FFC50000" Foreground="White"
+                        VerticalAlignment="Stretch" Click="removePoints_Click" />
+               
+            </StackPanel>
+
+        </StackPanel>
+
+        <TextBlock x:Name="resultsLabel" Visibility="Visible" Grid.Row="9" Grid.Column="2"
+                   Grid.ColumnSpan="3"  Text="Trasa optymalna" VerticalAlignment="Stretch"
+                   HorizontalAlignment="Stretch" TextAlignment="Center" FontSize="17"
+                   Background="#FF74007A"  Foreground="White" Padding="3 3 3 3" Margin="15 0 15 0" />
+        
+        <ListBox x:Name="results" Visibility="Visible" Grid.Row="10" Grid.Column="2"
+                 Grid.ColumnSpan="3" Grid.RowSpan="2" BorderBrush="#FF383737"  Margin="15 0 15 0">
+            
+            <ListBox.Background>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </ListBox.Background>
+            
+        </ListBox>
+
+        <TextBlock x:Name="shopsListLabel" Visibility="Visible" Grid.Row="1" Grid.Column="6"
+                   Text="Pobliskie firmy" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                   TextAlignment="Center" FontSize="17" Background="#FF74007A"  Foreground="White"
+                   Padding="3 3 3 3"/>
+
+        <ListBox x:Name="shopsList" Visibility="Visible" HorizontalContentAlignment="Stretch"
+                 Grid.Row="2" Grid.Column="6" Grid.RowSpan="11" SelectionChanged="ShopItemClicked" >
+           <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Background="#FF323232" HorizontalAlignment="Stretch">
+                        <TextBlock Text="" TextAlignment="Center" FontSize="15" Foreground="White"
+                                   Width="20" Padding="2 2 2 2"  Background="#FF74007A"/>
+                        <StackPanel Orientation="Vertical">
+                            <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White"
+                                       Padding="7 2 2 2" Text="{Binding Name}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontSize="15" HorizontalAlignment="Stretch"   Foreground="White"
+                                       Padding="7 2 2 2" Text="{Binding City}"/>
+                                <TextBlock FontSize="15" HorizontalAlignment="Stretch"   Foreground="White"
+                                        Text=", "/>
+                                <TextBlock FontSize="15" HorizontalAlignment="Stretch"   Foreground="White"
+                                       Padding="0 2 2 2" Text="{Binding Address}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+
+            <ListBox.Background>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </ListBox.Background>
+
+            <ListBox.BorderBrush>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </ListBox.BorderBrush>
+
+        </ListBox>
+
+        <TextBlock x:Name="makeOrder" Visibility="Visible" Grid.Row="4" Grid.Column="3" Grid.ColumnSpan="2"
+                   Text="Złoż zamówienie" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                   TextAlignment="Center" FontSize="17" Background="#FF74007A"  Foreground="White"
+                   Padding="3 3 3 3"/>
+        
+        <TextBlock x:Name="shopName" FontSize="15" HorizontalAlignment="Stretch"   Foreground="White"
+                                       Padding="7 2 2 2"  Grid.Column="3" Grid.Row="5" Grid.ColumnSpan="2">
+            <TextBlock.Background>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </TextBlock.Background>
+            
+
+        </TextBlock>
+        
+        <TextBlock x:Name="shopAddress" FontSize="15" HorizontalAlignment="Stretch"   Foreground="White"
+                                         Grid.Column="3" Grid.Row="6" Padding="7 2 2 2" Grid.ColumnSpan="2">
+            <TextBlock.Background>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </TextBlock.Background>
+            
+        </TextBlock>
+
+        <TextBlock x:Name="productsListLabel" Text="Dostępne produkty" TextAlignment="Center" Background="#FF74007A"  FontSize="15" HorizontalAlignment="Stretch"   Foreground="White"
+                                         Grid.Column="3" Grid.Row="7" Grid.ColumnSpan="2" Padding="7 2 2 2" >
+
+        </TextBlock>
+
+
+
+        <ListBox x:Name="productsList" Visibility ="Visible"  HorizontalContentAlignment="Stretch"
+                 Grid.Row="8" Grid.Column="3" Grid.RowSpan="1" Grid.ColumnSpan="2" >
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Background="#FF323232" HorizontalAlignment="Stretch">
+                        <TextBlock Text="" TextAlignment="Center" FontSize="15" Foreground="White"
+                                   Width="20" Padding="2 2 2 2"  Background="#FF74007A"/>
+                        <TextBlock FontSize="15" HorizontalAlignment="Stretch" Width="400" Foreground="White"
+                                       Padding="7 2 2 2" Text="{Binding}"/>
+                        <TextBox x:Name="productCount" Margin="20 0 0 0" HorizontalAlignment="Stretch" Width="50"  Padding="2 2 2 2">
+                        </TextBox>
+                        <TextBlock FontSize="15" HorizontalAlignment="Stretch" Foreground="White"
+                                       Padding="7 2 2 2" Text="Kg"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+
+            <ListBox.Background>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </ListBox.Background>
+
+            <ListBox.BorderBrush>
+                <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+            </ListBox.BorderBrush>
+
+        </ListBox>
+
+
+
+        <StackPanel x:Name="algStackPane1l" Visibility="Visible" Grid.Column="3" Grid.Row="9" Grid.ColumnSpan="2">
+
+            <StackPanel>
+
+                <StackPanel.Background>
+                    <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+                </StackPanel.Background>
+
+                <Button x:Name="addOrder" Content="Dodaj zamówienie" BorderBrush="#FF1359D3"
+                        Margin="5 0 5 5" Background="#FF1359D3" Foreground="White"
+                        VerticalAlignment="Stretch" Click="addOrderButtonClicked" />
+                <Button x:Name="cancelOrder" Content="Anuluj" BorderBrush="#FF1359D3"
+                        Margin="5 0 5 5" Background="#FFC50000" Foreground="White"
+                        VerticalAlignment="Stretch" Click="cancelOrderButtonPressed" />
+
+
+            </StackPanel>
+
+        </StackPanel>
+
+
+    </Grid>
+</Window>
