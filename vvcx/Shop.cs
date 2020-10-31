@@ -8,20 +8,25 @@ namespace vvcx
 {
     public class Shop
     {
-        public Shop(string name, string city, string address, double latitude, double longitude)
+        public Shop(string name, string city, string address, double latitude, double longitude, List<Product> products)
         {
             Name = name;
             City = city;
             Address = address;
             Latitude = latitude;
             Longitude = longitude;
-            products = new List<string> { "cegła klinkierowa export 552", "piasek" }; // przykładowe produkty
+            Products = products;
         }
         public string Name { get; set; }
         public string City { get; set; }
         public string Address { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public List<string> products;
+        public List<Product> Products;
+
+        public string ShopToBD()
+        {
+            return string.Format("{0},{1},{2},{3},{4}", Name, City, Address, Latitude.ToString(), Longitude.ToString());
+        }
     }
 }

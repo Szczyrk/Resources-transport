@@ -18,6 +18,7 @@ using System.Xml;
 using System.Net;
 using System.Xml.XPath;
 using System.Windows.Controls.Primitives;
+using vvcx.BD;
 
 
 // CO TRZEBA ZROBIC
@@ -61,10 +62,11 @@ namespace vvcx
             orders = new Orders();
 
             // Przykładowe dane, zastapisz to jakos baza danych ogólnie
-            Shop example = new Shop("Bodzio", "Wroclaw", "Torfowa 24", 51.1541202, 17.069726);
-            Shop example1 = new Shop("AGD", "Wroclaw", "Grudziądzka 24", 51.1541202, 17.069726);
-            shops[example.Name] = example;
-            shops[example1.Name] = example1;
+            SQLite.CreateBD();
+            foreach (Shop shop in SQLite.GetShops())
+            {
+                shops[shop.Name] = shop;
+            }
 
             InitializeComponent();
             setState(UIState.Initial);
@@ -115,7 +117,7 @@ namespace vvcx
             }
 
             Tuple<double, double> coordinates = geoHandler.getLocationPoint(city, street);
-            Shop workPlace = new Shop("", city, street, coordinates.Item1, coordinates.Item2);
+            Shop workPlace = new Shop("", city, street, coordinates.Item1, coordinates.Item2, null);
             createAndDisplayPushpin(coordinates.Item1, coordinates.Item2);
             setState(UIState.ShopSearch);
             shops.Add("workplace", workPlace);
@@ -140,7 +142,7 @@ namespace vvcx
         private void ShopItemClicked(object sender, SelectionChangedEventArgs e)
         {
             var selectedShop = (Shop)shopsList.SelectedItem;
-            productsList.ItemsSource = selectedShop.products;
+            productsList.ItemsSource = selectedShop.Products.Select(p => p.Name);
             shopName.Text = selectedShop.Name;
             shopAddress.Text = selectedShop.City + ", " + selectedShop.Address;
 
