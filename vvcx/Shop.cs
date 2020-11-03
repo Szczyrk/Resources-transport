@@ -8,6 +8,17 @@ namespace vvcx
 {
     public class Shop
     {
+        public Shop(int id,string name, string city, string address, double latitude, double longitude, List<Product> products)
+        {
+            Name = name;
+            City = city;
+            Address = address;
+            Latitude = latitude;
+            Longitude = longitude;
+            Products = products;
+            Id = id;
+        }
+
         public Shop(string name, string city, string address, double latitude, double longitude, List<Product> products)
         {
             Name = name;
@@ -22,6 +33,8 @@ namespace vvcx
         public string Address { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
+        public int Id { get; set; }
+
         public List<Product> Products;
 
         public string ShopToBD()

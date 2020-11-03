@@ -33,13 +33,13 @@ namespace vvcx.BD
             products.Add(new Product("Pustaki", 8));
             products.Add(new Product("Cement", 2));
             products.Add(new Product("Deski", 3));
-            Shop example = new Shop("Bodzio", "Wroclaw", "Torfowa 24", 51.1541202, 17.069726, products);
+            Shop example = new Shop("Manex", "Wroclaw", "Bystrzycka 26", 51.1183418, 16.9766105, products);
             List<Product> products2 = new List<Product>();
             products2.Add(new Product("Zaprawa", 1));
             products2.Add(new Product("Elewacja", 1.5));
             products2.Add(new Product("Bloczki betonowe", 15));
             products2.Add(new Product("Gwoździe", 0.1));
-            Shop example1 = new Shop("AGD", "Wroclaw", "Grudziądzka 24", 51.1541202, 17.069726, products2);
+            Shop example1 = new Shop("Budinpol", "Wroclaw", "aleja Aleksandra Brucknera 23", 51.1328043, 17.0804143, products2);
             List<Shop> shops = new List<Shop>();
             shops.Add(example1);
             shops.Add(example);
@@ -54,6 +54,8 @@ namespace vvcx.BD
             string SQL = "select Id from shop order by Id desc limit 1";
             command = new SQLiteCommand(SQL, connection);
             int lastIdShop = Convert.ToInt32(command.ExecuteScalar());
+            if (lastIdShop == 0)
+                lastIdShop = 1;
             for (int i = 0; i < shop.Count; i++)
             {
                 command.CommandText = string.Format("insert into shop(Id, Name, City, Adress, Latitude, Longitude) values({0}, @name, @city, @adress, @latitude, @longitude)", lastIdShop + i);
@@ -98,7 +100,7 @@ namespace vvcx.BD
                 products.Add(new Product(dataReaderProducts["Name"].ToString(), dataReaderProducts.GetDouble(3)));
             }
             dataReader.Read();
-            Shop shop = new Shop(dataReader["Name"].ToString(), dataReader["City"].ToString(), dataReader["Adress"].ToString(),
+            Shop shop = new Shop(dataReader.GetInt32(0), dataReader["Name"].ToString(), dataReader["City"].ToString(), dataReader["Adress"].ToString(),
                          dataReader.GetDouble(4), dataReader.GetDouble(5), products);
             if (closeConnection)
                 connection.Close();

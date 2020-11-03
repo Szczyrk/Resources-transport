@@ -53,6 +53,7 @@ namespace vvcx
         private Dictionary<string, Shop> shops;
         private Orders orders;
         private BrushConverter brushConverter;
+        double[,] distanceMatrix;
 
         public MainWindow()
         {
@@ -63,10 +64,7 @@ namespace vvcx
 
             // Przykładowe dane, zastapisz to jakos baza danych ogólnie
             SQLite.CreateBD();
-            foreach (Shop shop in SQLite.GetShops())
-            {
-                shops[shop.Name] = shop;
-            }
+
 
             InitializeComponent();
             setState(UIState.Initial);
@@ -117,11 +115,15 @@ namespace vvcx
             }
 
             Tuple<double, double> coordinates = geoHandler.getLocationPoint(city, street);
-            Shop workPlace = new Shop("", city, street, coordinates.Item1, coordinates.Item2, null);
+            Shop workPlace = new Shop(0, "Budowa", city, street, coordinates.Item1, coordinates.Item2, null);
             createAndDisplayPushpin(coordinates.Item1, coordinates.Item2);
             setState(UIState.ShopSearch);
             shops.Add("workplace", workPlace);
-            foreach(var item in shops)
+            foreach (Shop shop in SQLite.GetShops())
+            {
+                shops[shop.Name] = shop;
+            }
+            foreach (var item in shops)
             {
                 if(item.Key != "workplace")
                 {
@@ -228,14 +230,25 @@ namespace vvcx
                 return;
             }
 
-            List<Shop> shopList = new List<Shop>();
-            shopList.Add(shops["workplace"]); // fake, dodaje budowe
-            foreach (var order in orders.OrdersList)
+            List<Shop> shopList = shops.Select(s => s.Value).ToList();
+            distanceMatrix = geoHandler.getDistanceMatrix(shopList);
+            /*
+                        List<GeoRouteNode> nodes = geoHandler.getRoutes(shopList);
+                        MessageBox.Show(string.Join("", nodes.Select(c => $"{c.From.Name} {c.To.Name} {c.RouteLength} \n")));*/
+            string matrix = "            ";
+            matrix += string.Join(" ", shopList.Select(c => string.Format("{0,10}", c.Name)));
+            matrix += "\n";
+            int rawLength = distanceMatrix.GetLength(0);
+            for (int i = 0; i < rawLength; i++)
             {
-                shopList.Add(order.Shop);
+                matrix += string.Format("{0,10}", shopList[i].Name);
+                for (int j = 0; j < rawLength; j++)
+                {
+                    matrix += string.Format("{0,10}", distanceMatrix[i, j]);
+                }
+                matrix += "\n";
             }
-
-            List<GeoRouteNode> nodes = geoHandler.getRoutes(shopList);
+            MessageBox.Show(matrix);
         }
 
         private void setState(UIState newState)
