@@ -19,6 +19,7 @@ using System.Net;
 using System.Xml.XPath;
 using System.Windows.Controls.Primitives;
 using vvcx.BD;
+using System.Windows.Media.TextFormatting;
 
 
 // CO TRZEBA ZROBIC
@@ -53,7 +54,7 @@ namespace vvcx
         private Dictionary<string, Shop> shops;
         private Orders orders;
         private BrushConverter brushConverter;
-        double[,] distanceMatrix;
+        double[][] distanceMatrix;
 
         public MainWindow()
         {
@@ -74,11 +75,11 @@ namespace vvcx
         {
             addedPoints.Items.Clear();
 
-            for (int i= (myMap.Children.Count-1); i>0; i--)
+            for (int i = (myMap.Children.Count - 1); i > 0; i--)
             {
                 myMap.Children.RemoveAt(i);
             }
-            for(int i = 0; i<orders.OrdersList.Count;i++)
+            for (int i = 0; i < orders.OrdersList.Count; i++)
             {
                 orders.OrdersList.RemoveAt(i);
             }
@@ -98,7 +99,7 @@ namespace vvcx
             string street = "";
             int separatorCount = searchWorkPlace.Text.Split(',').Length - 1;
 
-            if ((separatorCount > 1) || (searchWorkPlace.Text.Length==0))
+            if ((separatorCount > 1) || (searchWorkPlace.Text.Length == 0))
             {
                 MessageBox.Show("Podana lokalizacja jest błędna \n Poprawny wzór: Miejscowość, Adres");
                 return;
@@ -125,7 +126,7 @@ namespace vvcx
             }
             foreach (var item in shops)
             {
-                if(item.Key != "workplace")
+                if (item.Key != "workplace")
                 {
                     shopsList.Items.Add(item.Value);
                 }
@@ -154,7 +155,7 @@ namespace vvcx
         private void refreshCurrentOrdersList()
         {
             addedPoints.Items.Clear();
-            for (int i=0; i<orders.OrdersList.Count;i++)
+            for (int i = 0; i < orders.OrdersList.Count; i++)
             {
                 addedPoints.Items.Add(orders.OrdersList[i]);
             }
@@ -162,9 +163,9 @@ namespace vvcx
 
         private void addOrderButtonClicked(object sender, RoutedEventArgs e)
         {
-            List<Tuple<string, double>> orderedProductList = new List<Tuple<string, double>>();
+            List<Tuple<Product, double>> orderedProductList = new List<Tuple<Product, double>>();
 
-            for (int i=0; i < (productsList.Items.Count); i++)
+            for (int i = 0; i < (productsList.Items.Count); i++)
             {
                 ListBoxItem productItem = (ListBoxItem)(productsList.ItemContainerGenerator.ContainerFromIndex(i));
                 ContentPresenter myContentPresenter = FindVisualChild<ContentPresenter>(productItem);
@@ -175,12 +176,12 @@ namespace vvcx
                 {
                     string productName = productItem.Content.ToString();
                     Console.WriteLine(productName);
-                    Tuple<string, double> orderedProduct = new Tuple<string, double>(productName, Convert.ToDouble(myTextBox.Text));
+                    Tuple<Product, double> orderedProduct = new Tuple<Product, double>(shops[shopName.Text].Products.First(p => p.Name == productName), Convert.ToDouble(myTextBox.Text));
                     orderedProductList.Add(orderedProduct);
                 }
             }
 
-            if(orderedProductList.Count>0)
+            if (orderedProductList.Count > 0)
             {
                 Order newOrder = new Order(shops[shopName.Text], orderedProductList);
                 orders.addOrder(newOrder);
@@ -232,23 +233,86 @@ namespace vvcx
 
             List<Shop> shopList = shops.Select(s => s.Value).ToList();
             distanceMatrix = geoHandler.getDistanceMatrix(shopList);
+
+            List<double> distance = GetVectorDistanceWithLimitedWeight();
+            ///////////////////////////////Do wywalenia
             /*
                         List<GeoRouteNode> nodes = geoHandler.getRoutes(shopList);
                         MessageBox.Show(string.Join("", nodes.Select(c => $"{c.From.Name} {c.To.Name} {c.RouteLength} \n")));*/
+
             string matrix = "            ";
             matrix += string.Join(" ", shopList.Select(c => string.Format("{0,10}", c.Name)));
             matrix += "\n";
             int rawLength = distanceMatrix.GetLength(0);
+
             for (int i = 0; i < rawLength; i++)
             {
                 matrix += string.Format("{0,10}", shopList[i].Name);
                 for (int j = 0; j < rawLength; j++)
                 {
-                    matrix += string.Format("{0,10}", distanceMatrix[i, j]);
+                    matrix += string.Format("{0,10}", distanceMatrix[i][j]);
                 }
                 matrix += "\n";
             }
+
+            ///////////////////////////////////////////////
+            SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
+            double[][] array = new double[distance.Count][];
+            for (int i = 0; i < distance.Count; i++)
+                array[i] = new double[1] { distance[i] };
+
+            string SA = simulatedAnnealing.wypiszElementy(simulatedAnnealing.algorytmNEH(array, distance.Count, 1), distance.Count, 1);
             MessageBox.Show(matrix);
+
+        }
+
+        private List<double> GetVectorDistanceWithLimitedWeight()
+        {
+            List<double> distance = new List<double>();
+            double sumWeight = 0, tmp = distanceMatrix[0][1];
+
+            for (int i = 0; i < orders.OrdersList.Count; i++)
+            {
+                Order order = orders.OrdersList[i];
+                if (i + 1 != order.Shop.Id)
+                    Console.WriteLine($"Inedks: {i + 1} Shop ID: {order.Shop.Id}");
+                if (sumWeight > 0)
+                {
+                    if (distanceMatrix[i][0] > distanceMatrix[i][i + 1])
+                        tmp += distanceMatrix[i][i + 1];//do nowego sklepu
+                    else
+                    {
+                        distance.Add(tmp + distanceMatrix[i][0]);//do budowy
+                        tmp = distanceMatrix[0][i + 1];
+                    }
+                }
+                foreach (var products in order.OrderedProducts)
+                {
+                    sumWeight += products.Item2 * products.Item1.Weight;
+                    if (sumWeight >= 1000)
+                    {
+                        int teams = 0;
+                        distance.Add(tmp + distanceMatrix[i + 1][0]);
+                        if (sumWeight != 1000)
+                            tmp = distanceMatrix[0][i + 1];
+                        else
+                            if (i < orders.OrdersList.Count)
+                            tmp = distanceMatrix[0][i + 2];
+                        else
+                            tmp = 0; //nie ma następnego
+
+                        while (sumWeight > 1000)
+                        {
+                            teams++;
+                            sumWeight -= products.Item1.Weight;
+                        }
+                        sumWeight = teams * products.Item1.Weight;
+                    }
+                }
+                if (i == orders.OrdersList.Count - 1 && tmp > 0)
+                    distance.Add(tmp + distanceMatrix[i + 1][0]);
+            }
+            return distance;
         }
 
         private void setState(UIState newState)

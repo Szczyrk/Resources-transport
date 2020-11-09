@@ -10,18 +10,18 @@ namespace vvcx
 
     class Order
     {
-        public Order(Shop orderShop, List<Tuple<string, double>> orderedProtuctList)
+        public Order(Shop orderShop, List<Tuple<Product, double>> orderedProtuctList)
         {
             shop = orderShop;
             orderedProducts = orderedProtuctList;
         }
 
         public string Name { get { return shop.Name; } }
-        public List<Tuple<string, double>> OrderedProducts { get { return orderedProducts; } }
+        public List<Tuple<Product, double>> OrderedProducts { get { return orderedProducts; } }
         public Shop Shop { get { return shop; } }
 
         private Shop shop;
-        private List<Tuple<string, double>> orderedProducts;
+        private List<Tuple<Product, double>> orderedProducts;
 
     }
 }

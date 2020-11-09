@@ -71,19 +71,20 @@ namespace vvcx
             return routeNodes;
         }
 
-        public double[,] getDistanceMatrix(List<Shop> geoPoints)
+        public double[][] getDistanceMatrix(List<Shop> geoPoints)
         {
-            double[,] distanceMatrix = new double[geoPoints.Count, geoPoints.Count];
+            double[][] distanceMatrix = new double[geoPoints.Count][];
 
             for (int i = 0; i < geoPoints.Count(); i++)
             {
+                distanceMatrix[i] = new double[geoPoints.Count];
                 for (int j = 0; j < geoPoints.Count(); j++)
                 {
                     Console.WriteLine($"{geoPoints[i].Name} - {geoPoints[j].Name}");
                     string url = routeUrlPrefix + wayPointPart + Convert.ToString(1) + "=" + Convert.ToString(geoPoints[i].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[i].Longitude).Replace(',', '.') + wayPointPart + Convert.ToString(2) + "=" + Convert.ToString(geoPoints[j].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[j].Longitude).Replace(',', '.') + urlKeyPart + bingMapsKey + urlXmlOutputPart;
                     XmlDocument response = getXmlResponse(url);
                     XmlNodeList duration = response.GetElementsByTagName(travelDuration);
-                    distanceMatrix[i, j] = Convert.ToDouble(duration[0].InnerText);
+                    distanceMatrix[i][j] = Convert.ToDouble(duration[0].InnerText);
                 }
             }
 
