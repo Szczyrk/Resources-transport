@@ -83,12 +83,12 @@ namespace vvcx
             {
                 orders.OrdersList.RemoveAt(i);
             }
+            orders.OrdersList.Clear();
+                        //// Shop workplace = shops["workplace"];
+                        //shops = new Dictionary<string, Shop>();
+                        //shops.Add("workplace", workplace);
 
-            //// Shop workplace = shops["workplace"];
-            //shops = new Dictionary<string, Shop>();
-            //shops.Add("workplace", workplace);
-
-            counter = 1;
+                        counter = 1;
             resultsLabel.Visibility = Visibility.Collapsed;
             results.Visibility = Visibility.Collapsed;
         }
@@ -163,7 +163,7 @@ namespace vvcx
 
         private void addOrderButtonClicked(object sender, RoutedEventArgs e)
         {
-            List<Tuple<Product, double>> orderedProductList = new List<Tuple<Product, double>>();
+            List<Tuple<Product, int>> orderedProductList = new List<Tuple<Product, int>>();
 
             for (int i = 0; i < (productsList.Items.Count); i++)
             {
@@ -176,7 +176,7 @@ namespace vvcx
                 {
                     string productName = productItem.Content.ToString();
                     Console.WriteLine(productName);
-                    Tuple<Product, double> orderedProduct = new Tuple<Product, double>(shops[shopName.Text].Products.First(p => p.Name == productName), Convert.ToDouble(myTextBox.Text));
+                    Tuple<Product, int> orderedProduct = new Tuple<Product, int>(shops[shopName.Text].Products.First(p => p.Name == productName), Convert.ToInt32(myTextBox.Text));
                     orderedProductList.Add(orderedProduct);
                 }
             }
@@ -273,44 +273,83 @@ namespace vvcx
 
             for (int i = 0; i < orders.OrdersList.Count; i++)
             {
+                int globalNumberOfPickedProducts = 0;
                 Order order = orders.OrdersList[i];
+                Order orderPrevious = null;
+                Order orderNext = null;
+                if (i-1 >= 0)
+                    orderPrevious = orders.OrdersList[i - 1];
+                if (i + 1 < orders.OrdersList.Count)
+                    orderNext = orders.OrdersList[i + 1];
+
                 if (i + 1 != order.Shop.Id)
                     Console.WriteLine($"Inedks: {i + 1} Shop ID: {order.Shop.Id}");
                 if (sumWeight > 0)
                 {
-                    if (distanceMatrix[i][0] > distanceMatrix[i][i + 1])
-                        tmp += distanceMatrix[i][i + 1];//do nowego sklepu
+                    if (distanceMatrix[i][0] > distanceMatrix[i][order.Shop.Id])
+                    {
+                        tmp += distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
+                        Console.WriteLine($"{orderPrevious.Name} -> {order.Name} = {distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id]}");
+                    }
                     else
                     {
-                        distance.Add(tmp + distanceMatrix[i][0]);//do budowy
-                        tmp = distanceMatrix[0][i + 1];
+                        Console.WriteLine($"{orderPrevious.Name} -> Budowa = {distanceMatrix[orderPrevious.Shop.Id][0]}");
+                        Console.WriteLine($"Budowa -> {order.Name} = {distanceMatrix[0][order.Shop.Id]}");
+                        distance.Add(tmp + distanceMatrix[orderPrevious.Shop.Id][0]);//do budowy
+                        tmp = distanceMatrix[0][order.Shop.Id];
+                        sumWeight = 0;
                     }
-                }
-                foreach (var products in order.OrderedProducts)
+                }else
+                    Console.WriteLine($"Budowa -> {order.Shop.Name} = {distanceMatrix[0][order.Shop.Id]}");
+                for (int j = 0; j < order.OrderedProducts.Count; j++)
                 {
-                    sumWeight += products.Item2 * products.Item1.Weight;
+                    Product product = order.OrderedProducts[j].Item1;
+                    int count = order.OrderedProducts[j].Item2 - globalNumberOfPickedProducts;
+                    //Console.WriteLine($"Count: {count}   {order.OrderedProducts[j].Item2}  -   {globalNumberOfPickedProducts}");
+                    sumWeight += count * product.Weight;
+
                     if (sumWeight >= 1000)
                     {
-                        int teams = 0;
-                        distance.Add(tmp + distanceMatrix[i + 1][0]);
+                        int numberOfUnpickedProducts = 0;
+                        distance.Add(tmp + distanceMatrix[order.Shop.Id][0]);
+
                         if (sumWeight != 1000)
-                            tmp = distanceMatrix[0][i + 1];
+                            tmp = distanceMatrix[0][order.Shop.Id];
                         else
-                            if (i < orders.OrdersList.Count)
-                            tmp = distanceMatrix[0][i + 2];
+                            if (i + 1 < orders.OrdersList.Count)
+                                tmp = distanceMatrix[0][orderNext.Shop.Id];
                         else
                             tmp = 0; //nie ma następnego
 
                         while (sumWeight > 1000)
                         {
-                            teams++;
-                            sumWeight -= products.Item1.Weight;
+                            numberOfUnpickedProducts++;
+                            sumWeight -= product.Weight;
                         }
-                        sumWeight = teams * products.Item1.Weight;
+                        globalNumberOfPickedProducts += (count - numberOfUnpickedProducts);
+                        
+                        sumWeight = 0;
+                        Console.WriteLine($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} KG");
+                        Console.WriteLine($"{order.Name} -> Budowa = {distanceMatrix[order.Shop.Id][0]}");
+                        Console.WriteLine($"Budowa -> {order.Name} = {distanceMatrix[0][order.Shop.Id]}");
+                        count = numberOfUnpickedProducts;
                     }
+                    else
+                    {
+                        Console.WriteLine($"{product.Name}: {count} - {count * product.Weight} KG");
+                        count = 0;
+                    }
+                    //Console.WriteLine($"Count: {count}");
+                    if (count > 0)
+                        j--;
+                    else
+                        globalNumberOfPickedProducts = 0;
                 }
                 if (i == orders.OrdersList.Count - 1 && tmp > 0)
-                    distance.Add(tmp + distanceMatrix[i + 1][0]);
+                {
+                    Console.WriteLine($"{order.Name} -> Budowa = {distanceMatrix[order.Shop.Id][0]}");
+                    distance.Add(tmp + distanceMatrix[order.Shop.Id][0]);
+                }
             }
             return distance;
         }
