@@ -52,16 +52,18 @@ namespace vvcx
 
         private GeoLocalHandler geoHandler;
         private Dictionary<string, Shop> shops;
-        private Orders orders;
+        private static Orders orders;
         private BrushConverter brushConverter;
-        double[][] distanceMatrix;
+        public static double[][] distanceMatrix;
+
+        internal static Orders Orders { get => orders; set => orders = value; }
 
         public MainWindow()
         {
             geoHandler = new GeoLocalHandler(bingMapsKey);
             brushConverter = new BrushConverter();
             shops = new Dictionary<string, Shop>();
-            orders = new Orders();
+            Orders = new Orders();
 
             // Przykładowe dane, zastapisz to jakos baza danych ogólnie
             SQLite.CreateBD();
@@ -79,11 +81,11 @@ namespace vvcx
             {
                 myMap.Children.RemoveAt(i);
             }
-            for (int i = 0; i < orders.OrdersList.Count; i++)
+            for (int i = 0; i < Orders.OrdersList.Count; i++)
             {
-                orders.OrdersList.RemoveAt(i);
+                Orders.OrdersList.RemoveAt(i);
             }
-            orders.OrdersList.Clear();
+            Orders.OrdersList.Clear();
                         //// Shop workplace = shops["workplace"];
                         //shops = new Dictionary<string, Shop>();
                         //shops.Add("workplace", workplace);
@@ -155,9 +157,9 @@ namespace vvcx
         private void refreshCurrentOrdersList()
         {
             addedPoints.Items.Clear();
-            for (int i = 0; i < orders.OrdersList.Count; i++)
+            for (int i = 0; i < Orders.OrdersList.Count; i++)
             {
-                addedPoints.Items.Add(orders.OrdersList[i]);
+                addedPoints.Items.Add(Orders.OrdersList[i]);
             }
         }
 
@@ -183,8 +185,11 @@ namespace vvcx
 
             if (orderedProductList.Count > 0)
             {
-                Order newOrder = new Order(shops[shopName.Text], orderedProductList);
-                orders.addOrder(newOrder);
+                foreach (Tuple<Product, int> orderedProduct in orderedProductList)
+                {
+                    Order newOrder = new Order(shops[shopName.Text], orderedProduct);
+                    Orders.addOrder(newOrder);
+                }
 
                 createAndDisplayPushpin(shops[shopName.Text].Latitude, shops[shopName.Text].Longitude);
                 refreshCurrentOrdersList();
@@ -234,12 +239,21 @@ namespace vvcx
             List<Shop> shopList = shops.Select(s => s.Value).ToList();
             distanceMatrix = geoHandler.getDistanceMatrix(shopList);
 
-            List<double> distance = GetVectorDistanceWithLimitedWeight();
-            ///////////////////////////////Do wywalenia
-            /*
-                        List<GeoRouteNode> nodes = geoHandler.getRoutes(shopList);
-                        MessageBox.Show(string.Join("", nodes.Select(c => $"{c.From.Name} {c.To.Name} {c.RouteLength} \n")));*/
+            SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
+            int[][] array = new int[orders.OrdersList.Count][];
+            for (int i = 0; i < orders.OrdersList.Count; i++)
+                array[i] = new int[1] { i };
+            int[][] trasa = simulatedAnnealing.SimulatedAnnealingAlg(array, 30, orders.OrdersList.Count, 1);
+            string SA = simulatedAnnealing.wypiszElementy(trasa, orders.OrdersList.Count, 1);
+            List<int> tmp = new List<int>();
+            for (int i = 0; i < orders.OrdersList.Count; i++)
+                tmp.Add(trasa[i][0]);
+            MessageBox.Show(SA + "\n" + simulatedAnnealing.CalculateDistanceForOrders(tmp));
 
+        }
+
+        void ShowMatrix(List<Shop> shopList)
+        {
             string matrix = "            ";
             matrix += string.Join(" ", shopList.Select(c => string.Format("{0,10}", c.Name)));
             matrix += "\n";
@@ -254,105 +268,9 @@ namespace vvcx
                 }
                 matrix += "\n";
             }
-
-            ///////////////////////////////////////////////
-            SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
-            double[][] array = new double[distance.Count][];
-            for (int i = 0; i < distance.Count; i++)
-                array[i] = new double[1] { distance[i] };
-
-            string SA = simulatedAnnealing.wypiszElementy(simulatedAnnealing.algorytmNEH(array, distance.Count, 1), distance.Count, 1);
             MessageBox.Show(matrix);
-
         }
 
-        private List<double> GetVectorDistanceWithLimitedWeight()
-        {
-            List<double> distance = new List<double>();
-            double sumWeight = 0, tmp = distanceMatrix[0][1];
-
-            for (int i = 0; i < orders.OrdersList.Count; i++)
-            {
-                int globalNumberOfPickedProducts = 0;
-                Order order = orders.OrdersList[i];
-                Order orderPrevious = null;
-                Order orderNext = null;
-                if (i-1 >= 0)
-                    orderPrevious = orders.OrdersList[i - 1];
-                if (i + 1 < orders.OrdersList.Count)
-                    orderNext = orders.OrdersList[i + 1];
-
-                if (i + 1 != order.Shop.Id)
-                    Console.WriteLine($"Inedks: {i + 1} Shop ID: {order.Shop.Id}");
-                if (sumWeight > 0)
-                {
-                    if (distanceMatrix[i][0] > distanceMatrix[i][order.Shop.Id])
-                    {
-                        tmp += distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
-                        Console.WriteLine($"{orderPrevious.Name} -> {order.Name} = {distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id]}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{orderPrevious.Name} -> Budowa = {distanceMatrix[orderPrevious.Shop.Id][0]}");
-                        Console.WriteLine($"Budowa -> {order.Name} = {distanceMatrix[0][order.Shop.Id]}");
-                        distance.Add(tmp + distanceMatrix[orderPrevious.Shop.Id][0]);//do budowy
-                        tmp = distanceMatrix[0][order.Shop.Id];
-                        sumWeight = 0;
-                    }
-                }else
-                    Console.WriteLine($"Budowa -> {order.Shop.Name} = {distanceMatrix[0][order.Shop.Id]}");
-                for (int j = 0; j < order.OrderedProducts.Count; j++)
-                {
-                    Product product = order.OrderedProducts[j].Item1;
-                    int count = order.OrderedProducts[j].Item2 - globalNumberOfPickedProducts;
-                    //Console.WriteLine($"Count: {count}   {order.OrderedProducts[j].Item2}  -   {globalNumberOfPickedProducts}");
-                    sumWeight += count * product.Weight;
-
-                    if (sumWeight >= 1000)
-                    {
-                        int numberOfUnpickedProducts = 0;
-                        distance.Add(tmp + distanceMatrix[order.Shop.Id][0]);
-
-                        if (sumWeight != 1000)
-                            tmp = distanceMatrix[0][order.Shop.Id];
-                        else
-                            if (i + 1 < orders.OrdersList.Count)
-                                tmp = distanceMatrix[0][orderNext.Shop.Id];
-                        else
-                            tmp = 0; //nie ma następnego
-
-                        while (sumWeight > 1000)
-                        {
-                            numberOfUnpickedProducts++;
-                            sumWeight -= product.Weight;
-                        }
-                        globalNumberOfPickedProducts += (count - numberOfUnpickedProducts);
-                        
-                        sumWeight = 0;
-                        Console.WriteLine($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} KG");
-                        Console.WriteLine($"{order.Name} -> Budowa = {distanceMatrix[order.Shop.Id][0]}");
-                        Console.WriteLine($"Budowa -> {order.Name} = {distanceMatrix[0][order.Shop.Id]}");
-                        count = numberOfUnpickedProducts;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{product.Name}: {count} - {count * product.Weight} KG");
-                        count = 0;
-                    }
-                    //Console.WriteLine($"Count: {count}");
-                    if (count > 0)
-                        j--;
-                    else
-                        globalNumberOfPickedProducts = 0;
-                }
-                if (i == orders.OrdersList.Count - 1 && tmp > 0)
-                {
-                    Console.WriteLine($"{order.Name} -> Budowa = {distanceMatrix[order.Shop.Id][0]}");
-                    distance.Add(tmp + distanceMatrix[order.Shop.Id][0]);
-                }
-            }
-            return distance;
-        }
 
         private void setState(UIState newState)
         {

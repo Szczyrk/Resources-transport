@@ -1,14 +1,103 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace vvcx
 {
     public class SimulatedAnnealing
     {
         double T_KONC = 0.01;
-        double[][] insert(double[][] originalArray, int positionToInsertAt, double[] ValueToInsert, int sizeOfOriginalArrayX)
+
+        public double CalculateDistanceForOrders(List<int> OrdersList)
+        {
+            double distance = 0;
+            double sumWeight = 0;
+            Console.WriteLine();
+            Console.WriteLine("GetTime: " + OrdersList.Count);
+            Console.WriteLine();
+            int globalNumberOfPickedProducts = 0;
+            for (int i = 0; i < OrdersList.Count; i++)
+            {
+                
+                Order order = MainWindow.Orders.OrdersList[OrdersList[i]];
+                Order orderPrevious = null;
+                Order orderNext = null;
+                if (i - 1 >= 0)
+                    orderPrevious = MainWindow.Orders.OrdersList[OrdersList[i - 1]];
+                if (i + 1 < OrdersList.Count)
+                    orderNext = MainWindow.Orders.OrdersList[OrdersList[i + 1]];
+
+                if (i + 1 != order.Shop.Id)
+                    Console.WriteLine($"Inedks: {i + 1} Shop ID: {order.Shop.Id}");
+                if (sumWeight > 0)
+                {
+                    if (MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
+                    {
+                        distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
+                        Console.WriteLine($"{orderPrevious.Name} -> {order.Name} = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id]}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{orderPrevious.Name} -> Budowa = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][0]}");
+                        Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");
+                        distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][0];//do budowy
+                        distance += MainWindow.distanceMatrix[0][order.Shop.Id]; // do sklepu
+                        sumWeight = 0;
+                    }
+                }
+                else
+                {
+                    distance += MainWindow.distanceMatrix[0][order.Shop.Id];
+                    Console.WriteLine($"Budowa -> {order.Shop.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");
+                }
+                  
+
+                Product product = order.OrderedProducts.Item1;
+                int count = order.OrderedProducts.Item2 - globalNumberOfPickedProducts;
+                //Console.WriteLine($"Count: {count}   {order.OrderedProducts[j].Item2}  -   {globalNumberOfPickedProducts}");
+                sumWeight += count * product.Weight;
+
+                if (sumWeight >= 1000)
+                {
+                    int numberOfUnpickedProducts = 0;
+                    distance += MainWindow.distanceMatrix[order.Shop.Id][0];
+
+                    while (sumWeight > 1000)
+                    {
+                        numberOfUnpickedProducts++;
+                        sumWeight -= product.Weight;
+                    }
+                    globalNumberOfPickedProducts += (count - numberOfUnpickedProducts);
+
+                    sumWeight = 0;
+                    Console.WriteLine($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} KG");
+                    Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");
+                    Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");
+                    count = numberOfUnpickedProducts;
+                }
+                else
+                {
+                    Console.WriteLine($"{product.Name}: {count} - {count * product.Weight} KG");
+                    count = 0;
+                }
+                //Console.WriteLine($"Count: {count}");
+                if (count > 0)
+                    i--;
+                else
+                    globalNumberOfPickedProducts = 0;
+                if (i == OrdersList.Count - 1)
+                {
+                    Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");
+                    distance += (MainWindow.distanceMatrix[order.Shop.Id][0]);
+                }
+            }
+            Console.WriteLine("Czas na wszystkie zelcenia: " + distance);
+            return distance;
+        }
+
+        int[][] insert(int[][] originalArray, int positionToInsertAt, int[] ValueToInsert, int sizeOfOriginalArrayX)
         {
 
-            double[][] newArray = new double[sizeOfOriginalArrayX][]; //TWORZENIE TABLICY O ZADANYM ROZMIARZE sizeOfOriginalArrayX
+            int[][] newArray = new int[sizeOfOriginalArrayX][]; //TWORZENIE TABLICY O ZADANYM ROZMIARZE sizeOfOriginalArrayX
 
 
             for (int i = 0; i < sizeOfOriginalArrayX; ++i)
@@ -30,7 +119,7 @@ namespace vvcx
             }
             return newArray; //ZWRACA NOWA TABLICE
         }
-        public string wypiszElementy(double[][] tablicaZadan, int iloscZadan, int iloscMaszyn)
+        public string wypiszElementy(int[][] tablicaZadan, int iloscZadan, int iloscMaszyn)
         {
             string array = "";
             for (int i = 0; i < iloscZadan; i++)
@@ -46,50 +135,21 @@ namespace vvcx
             return array;
         }
 
-        double obliczCMax(double[][] tablicaTymczasowa, int iloscZadan, int iloscMaszyn)
+        double obliczCMax(int[][] tablicaTymczasowa, int iloscZadan, int iloscMaszyn)
         {
-            double[][] harmonogram = new double[iloscZadan][];
+            List<int> tmp = new List<int>();
             for (int i = 0; i < iloscZadan; i++)
-                harmonogram[i] = new double[iloscMaszyn];
-
-            double suma = 0;
-
-            for (int i = 0; i < iloscZadan; i++)
-                for (int j = 0; j < iloscMaszyn; j++)
-                {
-                    if (i == 0 && j == 0)
-                    {
-                        harmonogram[i][j] = tablicaTymczasowa[i][j];
-                        suma += harmonogram[i][j];
-                    }
-                    else if (i == 0 && j != 0)
-                    {
-                        harmonogram[i][j] = harmonogram[i][j - 1] + tablicaTymczasowa[i][j];
-                        suma += harmonogram[i][j];
-                    }
-                    else if (i != 0 && j == 0)
-                    {
-                        harmonogram[i][j] = harmonogram[i - 1][j] + tablicaTymczasowa[i][j];
-                        suma += harmonogram[i][j];
-                    }
-                    else
-                    {
-                        harmonogram[i][j] = Math.Max(harmonogram[i][j - 1], harmonogram[i - 1][j]) + tablicaTymczasowa[i][j];
-                        suma += harmonogram[i][j];
-                    }
-                }
-            double cMax = harmonogram[iloscZadan - 1][iloscMaszyn - 1];
-            return cMax;
+                tmp.Add(tablicaTymczasowa[i][0]);
+            return CalculateDistanceForOrders(tmp);
         }
 
-        /** Wersja podstawowa **/
 
         double czyZamienicKolejnosc(double aktualny, double nowy, double temperatura)
         {
             if (nowy < aktualny)
             {
                 return 1;
-                //return exp((aktualny - nowy)/temperatura);
+                //return Math.Exp((aktualny - nowy)/temperatura);
             };
 
             if (nowy >= aktualny)
@@ -99,37 +159,20 @@ namespace vvcx
             return 0;
         }
 
-        /** Wersja inna
 
-double czyZamienicKolejnosc (int aktualny, int nowy, double temperatura)
-{
-            if (nowy == aktualny)
-            {
-                return 0;
-            };
-
-            if (nowy != aktualny)
-            {
-                //return exp((aktualny - nowy)/temperatura);
-                return 1;
-            }
-}
-
-        **/
-
-        double[][] SimulatedAnnealingAlg(double[][] tablicaZadan, double temperatura, int iloscZadan, int iloscMaszyn)
+        public int[][] SimulatedAnnealingAlg(int[][] tablicaZadan, double temperatura, int iloscZadan, int iloscMaszyn)
         {
             // Krok 1 - Inicjalizacja
 
             double mi = 0.99;
 
-            double[][] tablicaPodstawowa = new double[iloscZadan][];
+            int[][] tablicaPodstawowa = new int[iloscZadan][];
             for (int k = 0; k < iloscZadan; k++)
-                tablicaPodstawowa[k] = new double[iloscMaszyn];
+                tablicaPodstawowa[k] = new int[iloscMaszyn];
 
-            double[][] tablicaZamieniona = new double[iloscZadan][];
+            int[][] tablicaZamieniona = new int[iloscZadan][];
             for (int k = 0; k < iloscZadan; k++)
-                tablicaZamieniona[k] = new double[iloscMaszyn];
+                tablicaZamieniona[k] = new int[iloscMaszyn];
 
             for (int i = 0; i < iloscZadan; i++)
                 for (int j = 0; j < iloscMaszyn; j++)
@@ -146,10 +189,9 @@ double czyZamienicKolejnosc (int aktualny, int nowy, double temperatura)
 
             while (temperatura > T_KONC)
             {
-                //Sleep(100);
 
                 double cmax1 = obliczCMax(tablicaPodstawowa, iloscZadan, iloscMaszyn);
-                ////cout << "cmax1 = " << cmax1 << endl;
+                // Console.WriteLine($"cmax1 = {cmax1}");
                 Random rnd = new Random();
                 n1 = (rnd.Next() % iloscZadan);
                 n2 = (rnd.Next() % iloscZadan);
@@ -158,12 +200,11 @@ double czyZamienicKolejnosc (int aktualny, int nowy, double temperatura)
                 {
                     n2 = (rnd.Next() % iloscZadan);
                 }
-                //swap(tablicaZamieniona[n1],tablicaZamieniona[n2]);
-                double[] tmp = tablicaZamieniona[n2];
+                int[] tmp = tablicaZamieniona[n2];
                 tablicaZamieniona = insert(tablicaZamieniona, n2, tablicaZamieniona[n1], iloscZadan);
                 tablicaZamieniona = insert(tablicaZamieniona, n1, tmp, iloscZadan);
                 double cmax2 = obliczCMax(tablicaZamieniona, iloscZadan, iloscMaszyn);
-                ////cout << "cmax2 = " << cmax2 << endl;
+                // Console.WriteLine($"cmax2 = {cmax2}");
 
                 // Krok 3 - Decyzja: wykonanie
 
@@ -179,9 +220,9 @@ double czyZamienicKolejnosc (int aktualny, int nowy, double temperatura)
                             tablicaZamieniona[i][j] = tablicaPodstawowa[i][j];
 
                     temperatura = temperatura * mi;
-                    ///cout << "Prawdop. zwraca: " << pp << " przeciwko " << sprawdzaniePrawdopodobienstwa << endl;
-                    ///cout << "Aktualna temperatura: " << temperatura << endl;
-                    ///cout << "Nie zamieniam tablic." << endl;
+/*                    Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {sprawdzaniePrawdopodobienstwa}");
+                    Console.WriteLine("Aktualna temperatura: {temperatura}");
+                    Console.WriteLine("Nie amieniam tablice.");*/
                     wynikKoncowy = 0;
                 }
                 else
@@ -191,201 +232,27 @@ double czyZamienicKolejnosc (int aktualny, int nowy, double temperatura)
                             tablicaPodstawowa[i][j] = tablicaZamieniona[i][j];
 
                     temperatura = temperatura * mi;
-                    ///cout << "Prawdop. zwraca: " << pp << " przeciwko " << sprawdzaniePrawdopodobienstwa << endl;
-                    //cout << "Aktualna temperatura: " << temperatura << endl;
-                    ///cout << "Zamieniam tablice." << endl;
+ /*                   Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {sprawdzaniePrawdopodobienstwa}");
+                    Console.WriteLine("Aktualna temperatura: {temperatura}");
+                    Console.WriteLine("Zamieniam tablice.");*/
                     wynikKoncowy = 1;
                 }
 
                 //wypiszElementy(tablicaPodstawowa, iloscZadan, iloscMaszyn);
                 //wypiszElementy(tablicaZamieniona, iloscZadan, iloscMaszyn);
-                //system("pause");
             }
 
-            double cMaxKoncowe;
+            double cMaxKoncowe = 0;
 
             if (wynikKoncowy == 0)
                 cMaxKoncowe = obliczCMax(tablicaPodstawowa, iloscZadan, iloscMaszyn);
             if (wynikKoncowy == 1)
                 cMaxKoncowe = obliczCMax(tablicaZamieniona, iloscZadan, iloscMaszyn);
 
-            /* cout << "Cmax = " << cMaxKoncowe << endl;
-             fstream output;
-             output.open("outputData.txt", ios::out|ios::app);
-             output << cMaxKoncowe << endl;
-             output.close();
-         */
+            Console.WriteLine("Cmax = " + cMaxKoncowe);
+
             return tablicaPodstawowa;
         }
 
-        double obliczNEH(double[][] tablicaKolejnosci, int iloscZadan, int iloscMaszyn)
-        {
-            double czasAktualny = 0;
-            double czasMinimalny = 99999;
-
-            double[][] tablicaTymczasowa = new double[iloscZadan][];
-            for (int k = 0; k < iloscZadan; k++)
-                tablicaTymczasowa[k] = new double[iloscMaszyn];
-
-            for (int i = 0; i < iloscZadan; i++)
-                for (int j = 0; j < iloscMaszyn; j++)
-                    tablicaTymczasowa[i][j] = tablicaKolejnosci[i][j];
-
-            double[][] harmonogram = new double[iloscZadan][];
-            for (int i = 0; i < iloscZadan; i++)
-                harmonogram[i] = new double[iloscMaszyn];
-
-            if (iloscZadan == 1)
-            {
-                for (int j = 0; j < iloscMaszyn; j++)
-                {
-                    harmonogram[0][j] = tablicaTymczasowa[0][j];
-                    czasAktualny += harmonogram[0][j];
-                    czasMinimalny = czasAktualny;
-                }
-
-                for (int x = 0; x < iloscZadan; x++)
-                    for (int z = 0; z < iloscMaszyn; z++)
-                        tablicaKolejnosci[x][z] = tablicaTymczasowa[x][z];
-            }
-            else
-            {
-                for (int i = 1; i < iloscZadan + 1; i++)
-                {
-                    if (i != iloscZadan)
-                    {
-                        for (int n = 0; n < iloscZadan; n++)
-                            for (int m = 0; m < iloscMaszyn; m++)
-                            {
-                                czasAktualny = 0;
-                                if (n == 0 && m == 0)
-                                {
-                                    harmonogram[n][m] = tablicaTymczasowa[n][m];
-                                    czasAktualny += harmonogram[n][m];
-                                }
-                                else if (n == 0 && m != 0)
-                                {
-                                    harmonogram[n][m] = harmonogram[n][m - 1] + tablicaTymczasowa[n][m];
-                                    czasAktualny += harmonogram[n][m];
-                                }
-                                else if (n != 0 && m == 0)
-                                {
-                                    harmonogram[n][m] = harmonogram[n - 1][m] + tablicaTymczasowa[n][m];
-                                    czasAktualny += harmonogram[n][m];
-                                }
-                                else
-                                {
-                                    harmonogram[n][m] = Math.Max(harmonogram[n][m - 1], harmonogram[n - 1][m]) + tablicaTymczasowa[n][m];
-                                    czasAktualny += harmonogram[n][m];
-                                }
-                            }
-
-                        if (czasAktualny <= czasMinimalny)
-                        {
-                            czasMinimalny = czasAktualny;
-
-                            for (int x = 0; x < iloscZadan; x++)
-                                for (int z = 0; z < iloscMaszyn; z++)
-                                    tablicaKolejnosci[x][z] = tablicaTymczasowa[x][z];
-                        }
-
-                        //swap(tablicaTymczasowa[iloscZadan-i-1],tablicaTymczasowa[iloscZadan-i]);;
-                        double[] tmp = tablicaTymczasowa[iloscZadan - i];
-                        tablicaTymczasowa = insert(tablicaTymczasowa, iloscZadan - i, tablicaTymczasowa[iloscZadan - i - 1], iloscZadan);
-                        tablicaTymczasowa = insert(tablicaTymczasowa, iloscZadan - i - 1, tmp, iloscZadan);
-                    }
-                    else
-                    {
-                        for (int n = 0; n < iloscZadan; n++)
-                            for (int m = 0; m < iloscMaszyn; m++)
-                            {
-                                czasAktualny = 0;
-                                if (n == 0 && m == 0)
-                                {
-                                    harmonogram[n][m] = tablicaTymczasowa[n][m];
-                                    czasAktualny += harmonogram[n][m];
-                                }
-                                else if (n == 0 && m != 0)
-                                {
-                                    harmonogram[n][m] = harmonogram[n][m - 1] + tablicaTymczasowa[n][m];
-                                    czasAktualny += harmonogram[n][m];
-                                }
-                                else if (n != 0 && m == 0)
-                                {
-                                    harmonogram[n][m] = harmonogram[n - 1][m] + tablicaTymczasowa[n][m];
-                                    czasAktualny += harmonogram[n][m];
-                                }
-                                else
-                                {
-                                    harmonogram[n][m] = Math.Max(harmonogram[n][m - 1], harmonogram[n - 1][m]) + tablicaTymczasowa[n][m];
-                                    czasAktualny += harmonogram[n][m];
-                                }
-                            }
-
-                        if (czasAktualny <= czasMinimalny)
-                        {
-                            czasMinimalny = czasAktualny;
-
-                            for (int x = 0; x < iloscZadan; x++)
-                                for (int z = 0; z < iloscMaszyn; z++)
-                                    tablicaKolejnosci[x][z] = tablicaTymczasowa[x][z];
-                        }
-                    }
-                }
-            }
-
-            return czasMinimalny;
-        }
-
-        public double[][] algorytmNEH(double[][] tablicaZadan, int iloscZadan, int iloscMaszyn)
-        {
-            double wagaAktualna = 0;
-            int indeksMaksymalnego = 0;
-            double wagaMaksymalna = 0;
-
-            double Cmax = 0;
-
-            double[][] tablicaKolejnosci = new double[iloscZadan][];
-            for (int k = 0; k < iloscZadan; k++)
-                tablicaKolejnosci[k] = new double[iloscMaszyn];
-
-            for (int k = 0; k < iloscZadan; k++)
-            {
-                wagaMaksymalna = 0;
-                for (int i = 0; i < iloscZadan; i++)
-                {
-                    wagaAktualna = 0;
-
-                    for (int j = 0; j < iloscMaszyn; j++)
-                    {
-                        wagaAktualna += tablicaZadan[i][j];
-                    }
-                    if (wagaAktualna > wagaMaksymalna)
-                    {
-                        wagaMaksymalna = wagaAktualna;
-                        indeksMaksymalnego = i;
-                    }
-                }
-
-                for (int j = 0; j < iloscMaszyn; j++)
-                    tablicaKolejnosci[k][j] = tablicaZadan[indeksMaksymalnego][j];
-
-                for (int j = 0; j < iloscMaszyn; j++)
-                    tablicaZadan[indeksMaksymalnego][j] = 0;
-
-                double czas = obliczNEH(tablicaKolejnosci, k + 1, iloscMaszyn);
-
-                Cmax = czas;
-
-            }
-            //  cout << "Cmax = " << Cmax << endl;
-
-            for (int i = 0; i < 10; i++)
-            {
-                SimulatedAnnealingAlg(tablicaKolejnosci, 30, iloscZadan, iloscMaszyn);
-                //       Sleep(1000);
-            }
-            return tablicaKolejnosci;
-        }
     }
 }
