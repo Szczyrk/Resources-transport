@@ -42,13 +42,27 @@ namespace vvcx
             XmlDocument response = getXmlResponse(url);
             XmlNodeList latitude = response.GetElementsByTagName(urlLatitude);
             XmlNodeList longitude = response.GetElementsByTagName(urlLongitude);
+            double latitueAsDouble, longitudeAsDouble;
+            try
+            {
+                latitueAsDouble = Double.Parse(longitude[0].InnerText.Replace(".", ","));
+                longitudeAsDouble = Double.Parse(latitude[0].InnerText.Replace(".", ","));
+            }
+            catch
+            {
+                latitueAsDouble = Double.Parse(longitude[0].InnerText);
+                longitudeAsDouble = Double.Parse(latitude[0].InnerText);
+            }
 
-                        double latitueAsDouble = Double.Parse(longitude[0].InnerText.Replace(".",","));
-                        double longitudeAsDouble = Double.Parse(latitude[0].InnerText.Replace(".", ","));
-            //double latitueAsDouble = Double.Parse(longitude[0].InnerText);
-           // double longitudeAsDouble = Double.Parse(latitude[0].InnerText);
-
-            Tuple<double, double> location = new Tuple<double, double>(longitudeAsDouble, latitueAsDouble);
+            Tuple<double, double> location = null;
+            try
+            {
+                location = new Tuple<double, double>(longitudeAsDouble, latitueAsDouble);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: nie można uzyskać longitudeAsDouble i latitueAsDouble " + e);
+            }
             return location;
         }
 
@@ -56,11 +70,11 @@ namespace vvcx
         {
             List<GeoRouteNode> routeNodes = new List<GeoRouteNode>();
 
-            for (int i=0; i<(geoPoints.Count()-1);i++)
+            for (int i = 0; i < (geoPoints.Count() - 1); i++)
             {
-                for (int j=(i+1); j<=(geoPoints.Count()-1);j++)
+                for (int j = (i + 1); j <= (geoPoints.Count() - 1); j++)
                 {
-                    string url = routeUrlPrefix + wayPointPart + Convert.ToString(1) + "=" + Convert.ToString(geoPoints[i].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[i].Longitude).Replace(',', '.') + wayPointPart + Convert.ToString(2) +"=" + Convert.ToString(geoPoints[j].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[j].Longitude).Replace(',', '.') + urlKeyPart + bingMapsKey + urlXmlOutputPart;
+                    string url = routeUrlPrefix + wayPointPart + Convert.ToString(1) + "=" + Convert.ToString(geoPoints[i].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[i].Longitude).Replace(',', '.') + wayPointPart + Convert.ToString(2) + "=" + Convert.ToString(geoPoints[j].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[j].Longitude).Replace(',', '.') + urlKeyPart + bingMapsKey + urlXmlOutputPart;
                     XmlDocument response = getXmlResponse(url);
                     XmlNodeList duration = response.GetElementsByTagName(travelDuration);
                     GeoRouteNode routeNode = new GeoRouteNode(geoPoints[i], geoPoints[j], Convert.ToDouble(duration[0].InnerText));
