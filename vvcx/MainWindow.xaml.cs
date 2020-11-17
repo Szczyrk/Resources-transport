@@ -21,20 +21,6 @@ using System.Windows.Controls.Primitives;
 using vvcx.BD;
 using System.Windows.Media.TextFormatting;
 
-
-// CO TRZEBA ZROBIC
-// 1) Baza danych
-// 2) jakieś konwertery czy coś typu paczka cegły -> 100kg , 100kg -> paczka cegły itp itd, i to także powinno być wyświetlane w liście orderdów i przy robieniu zakupów
-// 3) Stworzenie macierzy odległości
-// 4) Nie jestem webowcem, a Ty siedzisz chyba w webówce jeśli dobrze pamiętam: fajnie jakbyś jakoś ogarnął te zapytania do serwera, bo teraz jezeli damy 10 sklepów to nasra nam naście/kilkadziesiąt zapytań pod rząd i program wtedy muli. Może jakiś async czy coś?
-// 5) Ewentualnie poprawki/improvemnt tego co ja tu zrobiłem.
-// 6) Twoje własne pomysły :)
-
-// notatka: sorry za bałagan, szczególnie w .xaml. Wiele wierszy/kolumn to pozostałości po poprzednich elementach, a nie chciałem sie bawić w czyszczenie tego, bo cięzko potem wszystko ogarnąć
-
-// CO potrzebujesz: ściągnij sobie odpowiedni komponent do bing maps. wpisz po prostu bing maps c# i na pewno Cie przekieruje do tego komponentu i dodaj go do projektu (jesli nie będzie)
-// jest tez property bingMapsKey -> jeśli to Ci nie będzie działało, to wejdź na stronke bing maps i wygeneruj sobie własny klucz.
-
 namespace vvcx
 {
     public partial class MainWindow : Window
@@ -65,9 +51,7 @@ namespace vvcx
             shops = new Dictionary<string, Shop>();
             Orders = new Orders();
 
-            // Przykładowe dane, zastapisz to jakos baza danych ogólnie
             SQLite.CreateBD();
-
 
             InitializeComponent();
             setState(UIState.Initial);
@@ -75,7 +59,8 @@ namespace vvcx
 
         private void removePoints_Click(object sender, RoutedEventArgs e)
         {
-            addedPoints.Items.Clear();
+            DisplayedOrders ordersToDisplay = new DisplayedOrders();
+            Resources["DisplayedOrders"] = ordersToDisplay.Orders;
 
             for (int i = (myMap.Children.Count - 1); i > 0; i--)
             {
@@ -86,11 +71,8 @@ namespace vvcx
                 Orders.OrdersList.RemoveAt(i);
             }
             Orders.OrdersList.Clear();
-                        //// Shop workplace = shops["workplace"];
-                        //shops = new Dictionary<string, Shop>();
-                        //shops.Add("workplace", workplace);
 
-                        counter = 1;
+            counter = 1;
             resultsLabel.Visibility = Visibility.Collapsed;
             results.Visibility = Visibility.Collapsed;
         }
@@ -120,12 +102,12 @@ namespace vvcx
             Tuple<double, double> coordinates = geoHandler.getLocationPoint(city, street);
             Shop workPlace = new Shop(0, "Budowa", city, street, coordinates.Item1, coordinates.Item2, null);
             createAndDisplayPushpin(coordinates.Item1, coordinates.Item2);
-            setState(UIState.ShopSearch);
             shops.Add("workplace", workPlace);
             foreach (Shop shop in SQLite.GetShops())
             {
                 shops[shop.Name] = shop;
             }
+            shopsList.Items.Clear();
             foreach (var item in shops)
             {
                 if (item.Key != "workplace")
@@ -133,6 +115,9 @@ namespace vvcx
                     shopsList.Items.Add(item.Value);
                 }
             }
+            shopsList.SelectedIndex = 0;
+            setState(UIState.ShopSearch);
+
         }
 
         private void createAndDisplayPushpin(double longitude, double latitude)
@@ -147,7 +132,11 @@ namespace vvcx
         private void ShopItemClicked(object sender, SelectionChangedEventArgs e)
         {
             var selectedShop = (Shop)shopsList.SelectedItem;
-            productsList.ItemsSource = selectedShop.Products.Select(p => p.Name);
+            productsList.Items.Clear();
+            for (int i = 0; i < selectedShop.Products.Count; i++)
+            {
+                productsList.Items.Add(selectedShop.Products[i]);
+            }
             shopName.Text = selectedShop.Name;
             shopAddress.Text = selectedShop.City + ", " + selectedShop.Address;
 
@@ -156,11 +145,14 @@ namespace vvcx
 
         private void refreshCurrentOrdersList()
         {
-            addedPoints.Items.Clear();
+            DisplayedOrders ordersToDisplay = new DisplayedOrders();
+
             for (int i = 0; i < Orders.OrdersList.Count; i++)
             {
-                addedPoints.Items.Add(Orders.OrdersList[i]);
+                ordersToDisplay.addOrder(Orders.OrdersList[i]);
             }
+
+            Resources["DisplayedOrders"] = ordersToDisplay.Orders;
         }
 
         private void addOrderButtonClicked(object sender, RoutedEventArgs e)
@@ -173,10 +165,11 @@ namespace vvcx
                 ContentPresenter myContentPresenter = FindVisualChild<ContentPresenter>(productItem);
                 DataTemplate myDataTemplate = myContentPresenter.ContentTemplate;
                 TextBox myTextBox = (TextBox)myDataTemplate.FindName("productCount", myContentPresenter);
+                TextBlock productNameBox = (TextBlock)myDataTemplate.FindName("productName", myContentPresenter);
 
                 if ((myTextBox.Text.Length != 0) && (myTextBox.Text.All(char.IsDigit)))
                 {
-                    string productName = productItem.Content.ToString();
+                    string productName = productNameBox.Text;
                     Console.WriteLine(productName);
                     Tuple<Product, int> orderedProduct = new Tuple<Product, int>(shops[shopName.Text].Products.First(p => p.Name == productName), Convert.ToInt32(myTextBox.Text));
                     orderedProductList.Add(orderedProduct);
@@ -247,9 +240,19 @@ namespace vvcx
             string SA = simulatedAnnealing.wypiszElementy(trasa, orders.OrdersList.Count, 1);
             List<int> tmp = new List<int>();
             for (int i = 0; i < orders.OrdersList.Count; i++)
+            {
                 tmp.Add(trasa[i][0]);
-            MessageBox.Show(SA + "\n" + simulatedAnnealing.CalculateDistanceForOrders(tmp));
+            }
 
+            for (int i = 0; i < orders.OrdersList.Count; i++)
+            {
+                    results.Items.Add(orders.OrdersList[trasa[i][0]]);
+            }
+
+            resultsLabel.Visibility = Visibility.Visible;
+            results.Visibility = Visibility.Visible;
+
+            setState(UIState.Results);
         }
 
         void ShowMatrix(List<Shop> shopList)
@@ -274,8 +277,6 @@ namespace vvcx
 
         private void setState(UIState newState)
         {
-            // tak tak, wygląda to tragicznie, ale wolałem brzydką funkcję niż robienie dynamicznych elementów :)
-
             switch (newState)
             {
                 case UIState.Initial:
@@ -286,6 +287,7 @@ namespace vvcx
                         shopsListLabel.Visibility = Visibility.Collapsed;
                         shopsList.Visibility = Visibility.Collapsed;
                         resultsLabel.Visibility = Visibility.Collapsed;
+                        returnToOrdersPanel.Visibility = Visibility.Collapsed;
                         results.Visibility = Visibility.Collapsed;
                         makeOrder.Visibility = Visibility.Collapsed;
                         shopName.Visibility = Visibility.Collapsed;
@@ -293,6 +295,8 @@ namespace vvcx
                         productsListLabel.Visibility = Visibility.Collapsed;
                         productsList.Visibility = Visibility.Collapsed;
                         algStackPane1l.Visibility = Visibility.Collapsed;
+                        workPlaceLocationLabel.Visibility = Visibility.Visible;
+                        workPlacePanel.Visibility = Visibility.Visible;
                         break;
                     }
 
@@ -311,6 +315,11 @@ namespace vvcx
                         workPlaceLocationLabel.Visibility = Visibility.Collapsed;
                         shopsListLabel.Visibility = Visibility.Visible;
                         shopsList.Visibility = Visibility.Visible;
+                        TotalTimeLabel.Visibility = Visibility.Collapsed;
+                        TotalTimePanel.Visibility = Visibility.Collapsed;
+                        resultsLabel.Visibility = Visibility.Collapsed;
+                        results.Visibility = Visibility.Collapsed;
+                        returnToOrdersPanel.Visibility = Visibility.Collapsed;
                         break;
                     }
 
@@ -322,6 +331,7 @@ namespace vvcx
                         productsListLabel.Visibility = Visibility.Visible;
                         productsList.Visibility = Visibility.Visible;
                         algStackPane1l.Visibility = Visibility.Visible;
+
                         break;
                     }
 
@@ -333,12 +343,44 @@ namespace vvcx
                         productsListLabel.Visibility = Visibility.Collapsed;
                         productsList.Visibility = Visibility.Collapsed;
                         algStackPane1l.Visibility = Visibility.Collapsed;
-                        results.Visibility = Visibility.Visible;
+                        returnToOrdersPanel.Visibility = Visibility.Visible;
+                        TotalTimeLabel.Visibility = Visibility.Visible;
+                        TotalTimePanel.Visibility = Visibility.Visible;
+                        shopsListLabel.Visibility = Visibility.Collapsed;
+                        shopsList.Visibility = Visibility.Collapsed;
                         resultsLabel.Visibility = Visibility.Visible;
+                        results.Visibility = Visibility.Visible;
+                        TotalTimeLabel.Visibility = Visibility.Visible;
+                        TotalTimePanel.Visibility = Visibility.Visible;
+                        addedPointsLabel.Visibility = Visibility.Collapsed;
+                        addedPoints.Visibility = Visibility.Collapsed;
+                        algStackPanel.Visibility = Visibility.Collapsed;
                         break;
                     }
             }
 
+        }
+
+        private void ReturnToOrdersButtonClicked(object sender, RoutedEventArgs e)
+        {
+            setState(UIState.ShopSearch);
+        }
+
+        private void returnToWorkplaceSearchButtonClicked(object sender, RoutedEventArgs e)
+        {
+            for (int i = (myMap.Children.Count - 1); i >= 0; i--)
+            {
+                myMap.Children.RemoveAt(i);
+            }
+            for (int i = 0; i < Orders.OrdersList.Count; i++)
+            {
+                Orders.OrdersList.RemoveAt(i);
+            }
+            searchWorkPlace.Text = "";
+            Orders.OrdersList.Clear();
+            counter = 0;
+            setState(UIState.Initial);
+            shops = new Dictionary<string, Shop>();
         }
     }
 }

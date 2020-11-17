@@ -43,10 +43,10 @@ namespace vvcx
             XmlNodeList latitude = response.GetElementsByTagName(urlLatitude);
             XmlNodeList longitude = response.GetElementsByTagName(urlLongitude);
 
-            /*            double latitueAsDouble = Double.Parse(longitude[0].InnerText.Replace(".",","));
-                        double longitudeAsDouble = Double.Parse(latitude[0].InnerText.Replace(".", ","));*/
-            double latitueAsDouble = Double.Parse(longitude[0].InnerText);
-            double longitudeAsDouble = Double.Parse(latitude[0].InnerText);
+                        double latitueAsDouble = Double.Parse(longitude[0].InnerText.Replace(".",","));
+                        double longitudeAsDouble = Double.Parse(latitude[0].InnerText.Replace(".", ","));
+            //double latitueAsDouble = Double.Parse(longitude[0].InnerText);
+           // double longitudeAsDouble = Double.Parse(latitude[0].InnerText);
 
             Tuple<double, double> location = new Tuple<double, double>(longitudeAsDouble, latitueAsDouble);
             return location;

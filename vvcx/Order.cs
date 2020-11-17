@@ -8,7 +8,7 @@ namespace vvcx
 {
     // Klasa powstała głównie do bindowania
 
-    class Order
+    public class Order
     {
         // int - ilość danego produktu do zamówienia
         public Order(Shop orderShop, Tuple<Product, int> orderedProtuctList)
@@ -23,6 +23,5 @@ namespace vvcx
 
         private Shop shop;
         private Tuple<Product, int> orderedProducts;
-
     }
 }
