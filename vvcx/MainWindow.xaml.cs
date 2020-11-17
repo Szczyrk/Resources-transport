@@ -115,7 +115,7 @@ namespace vvcx
                     shopsList.Items.Add(item.Value);
                 }
             }
-            shopsList.SelectedIndex = 0;
+
             setState(UIState.ShopSearch);
 
         }
@@ -132,15 +132,18 @@ namespace vvcx
         private void ShopItemClicked(object sender, SelectionChangedEventArgs e)
         {
             var selectedShop = (Shop)shopsList.SelectedItem;
-            productsList.Items.Clear();
-            for (int i = 0; i < selectedShop.Products.Count; i++)
+            if (selectedShop != null)
             {
-                productsList.Items.Add(selectedShop.Products[i]);
-            }
-            shopName.Text = selectedShop.Name;
-            shopAddress.Text = selectedShop.City + ", " + selectedShop.Address;
+                productsList.Items.Clear();
+                for (int i = 0; i < selectedShop.Products.Count; i++)
+                {
+                    productsList.Items.Add(selectedShop.Products[i]);
+                }
+                shopName.Text = selectedShop.Name;
+                shopAddress.Text = selectedShop.City + ", " + selectedShop.Address;
 
-            setState(UIState.OrderCreation);
+                setState(UIState.OrderCreation);
+            }
         }
 
         private void refreshCurrentOrdersList()
@@ -286,6 +289,7 @@ namespace vvcx
                         algStackPanel.Visibility = Visibility.Collapsed;
                         shopsListLabel.Visibility = Visibility.Collapsed;
                         shopsList.Visibility = Visibility.Collapsed;
+                        shopsList.UnselectAll();
                         resultsLabel.Visibility = Visibility.Collapsed;
                         returnToOrdersPanel.Visibility = Visibility.Collapsed;
                         results.Visibility = Visibility.Collapsed;
@@ -331,7 +335,6 @@ namespace vvcx
                         productsListLabel.Visibility = Visibility.Visible;
                         productsList.Visibility = Visibility.Visible;
                         algStackPane1l.Visibility = Visibility.Visible;
-
                         break;
                     }
 
