@@ -5,15 +5,15 @@ namespace vvcx
 {
     public class SimulatedAnnealing
     {
-        double T_KONC = 0.01;
+        double T_END = 0.01;
 
         public double CalculateDistanceForOrders(List<int> OrdersList)
         {
             double distance = 0;
             double sumWeight = 0;
-            Console.WriteLine();
+/*            Console.WriteLine();
             Console.WriteLine("GetTime: " + OrdersList.Count);
-            Console.WriteLine();
+            Console.WriteLine();*/
             int globalNumberOfPickedProducts = 0;
             for (int i = 0; i < OrdersList.Count; i++)
             {
@@ -25,29 +25,29 @@ namespace vvcx
                     orderPrevious = MainWindow.Orders.OrdersList[OrdersList[i - 1]];
                 if (i + 1 < OrdersList.Count)
                     orderNext = MainWindow.Orders.OrdersList[OrdersList[i + 1]];
-
-                if (i + 1 != order.Shop.Id)
-                    Console.WriteLine($"Inedks: {i + 1} Shop ID: {order.Shop.Id}");
-                if (sumWeight > 0)
+                if (i - 1 >= 0)
                 {
-                    if (MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
+                    if (sumWeight > 0 && orderPrevious.Name != order.Name)
                     {
-                        distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
-                        Console.WriteLine($"{orderPrevious.Name} -> {order.Name} = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id]}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{orderPrevious.Name} -> Budowa = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][0]}");
-                        Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");
-                        distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][0];//do budowy
-                        distance += MainWindow.distanceMatrix[0][order.Shop.Id]; // do sklepu
-                        sumWeight = 0;
+                        if (MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
+                        {
+                            distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
+/*                            Console.WriteLine($"{orderPrevious.Name} -> {order.Name} = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id]}");*/
+                        }
+                        else
+                        {
+/*                            Console.WriteLine($"{orderPrevious.Name} -> Budowa = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][0]}");
+                            Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
+                            distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][0];//do budowy
+                            distance += MainWindow.distanceMatrix[0][order.Shop.Id]; // do sklepu
+                            sumWeight = 0;
+                        }
                     }
                 }
                 else
                 {
                     distance += MainWindow.distanceMatrix[0][order.Shop.Id];
-                    Console.WriteLine($"Budowa -> {order.Shop.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");
+/*                    Console.WriteLine($"Budowa -> {order.Shop.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
                 }
                   
 
@@ -69,14 +69,14 @@ namespace vvcx
                     globalNumberOfPickedProducts += (count - numberOfUnpickedProducts);
 
                     sumWeight = 0;
-                    Console.WriteLine($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} KG");
+/*                    Console.WriteLine($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} KG");
                     Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");
-                    Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");
+                    Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
                     count = numberOfUnpickedProducts;
                 }
                 else
                 {
-                    Console.WriteLine($"{product.Name}: {count} - {count * product.Weight} KG");
+/*                    Console.WriteLine($"{product.Name}: {count} - {count * product.Weight} KG");*/
                     count = 0;
                 }
                 //Console.WriteLine($"Count: {count}");
@@ -86,7 +86,7 @@ namespace vvcx
                     globalNumberOfPickedProducts = 0;
                 if (i == OrdersList.Count - 1)
                 {
-                    Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");
+/*                    Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");*/
                     distance += (MainWindow.distanceMatrix[order.Shop.Id][0]);
                 }
             }
@@ -119,15 +119,15 @@ namespace vvcx
             }
             return newArray; //ZWRACA NOWA TABLICE
         }
-        public string wypiszElementy(int[][] tablicaZadan, int iloscZadan, int iloscMaszyn)
+        public string wypiszElementy(int[][] taskBoard, int numberOfTasks, int numberOfMachines)
         {
             string array = "";
-            for (int i = 0; i < iloscZadan; i++)
+            for (int i = 0; i < numberOfTasks; i++)
             {
-                for (int j = 0; j < iloscMaszyn; j++)
+                for (int j = 0; j < numberOfMachines; j++)
                 {
-                    array += tablicaZadan[i][j] + " ";
-                    Console.Write(tablicaZadan[i][j] + " ");
+                    array += taskBoard[i][j] + " ";
+                    Console.Write(taskBoard[i][j] + " ");
                 }
                 array += "\n";
                 Console.WriteLine();
@@ -135,123 +135,123 @@ namespace vvcx
             return array;
         }
 
-        double obliczCMax(int[][] tablicaTymczasowa, int iloscZadan, int iloscMaszyn)
+        double calculateCMax(int[][] temporaryTable, int numberOfTasks, int numberOfMachines)
         {
             List<int> tmp = new List<int>();
-            for (int i = 0; i < iloscZadan; i++)
-                tmp.Add(tablicaTymczasowa[i][0]);
+            for (int i = 0; i < numberOfTasks; i++)
+                tmp.Add(temporaryTable[i][0]);
             return CalculateDistanceForOrders(tmp);
         }
 
 
-        double czyZamienicKolejnosc(double aktualny, double nowy, double temperatura)
+        double DoReorder(double current, double novel, double temperatura)
         {
-            if (nowy < aktualny)
+            if (novel < current)
             {
                 return 1;
-                //return Math.Exp((aktualny - nowy)/temperatura);
+                //return Math.Exp((current - novel)/temperatura);
             };
 
-            if (nowy >= aktualny)
+            if (novel >= current)
             {
-                return Math.Exp((aktualny - nowy) / temperatura);
+                return Math.Exp((current - novel) / temperatura);
             }
             return 0;
         }
 
 
-        public int[][] SimulatedAnnealingAlg(int[][] tablicaZadan, double temperatura, int iloscZadan, int iloscMaszyn)
+        public int[][] SimulatedAnnealingAlg(int[][] taskBoard, double temperatura, int numberOfTasks, int numberOfMachines)
         {
             // Krok 1 - Inicjalizacja
 
             double mi = 0.99;
 
-            int[][] tablicaPodstawowa = new int[iloscZadan][];
-            for (int k = 0; k < iloscZadan; k++)
-                tablicaPodstawowa[k] = new int[iloscMaszyn];
+            int[][] basicArray = new int[numberOfTasks][];
+            for (int k = 0; k < numberOfTasks; k++)
+                basicArray[k] = new int[numberOfMachines];
 
-            int[][] tablicaZamieniona = new int[iloscZadan][];
-            for (int k = 0; k < iloscZadan; k++)
-                tablicaZamieniona[k] = new int[iloscMaszyn];
+            int[][] swappedArray = new int[numberOfTasks][];
+            for (int k = 0; k < numberOfTasks; k++)
+                swappedArray[k] = new int[numberOfMachines];
 
-            for (int i = 0; i < iloscZadan; i++)
-                for (int j = 0; j < iloscMaszyn; j++)
-                    tablicaPodstawowa[i][j] = tablicaZadan[i][j];
+            for (int i = 0; i < numberOfTasks; i++)
+                for (int j = 0; j < numberOfMachines; j++)
+                    basicArray[i][j] = taskBoard[i][j];
 
-            for (int i = 0; i < iloscZadan; i++)
-                for (int j = 0; j < iloscMaszyn; j++)
-                    tablicaZamieniona[i][j] = tablicaZadan[i][j];
+            for (int i = 0; i < numberOfTasks; i++)
+                for (int j = 0; j < numberOfMachines; j++)
+                    swappedArray[i][j] = taskBoard[i][j];
 
             // Krok 2 - generowanie ruchu
 
             int n1, n2;
-            int wynikKoncowy = 0;
+            int finalScore = 0;
 
-            while (temperatura > T_KONC)
+            while (temperatura > T_END)
             {
 
-                double cmax1 = obliczCMax(tablicaPodstawowa, iloscZadan, iloscMaszyn);
+                double cmax1 = calculateCMax(basicArray, numberOfTasks, numberOfMachines);
                 // Console.WriteLine($"cmax1 = {cmax1}");
                 Random rnd = new Random();
-                n1 = (rnd.Next() % iloscZadan);
-                n2 = (rnd.Next() % iloscZadan);
+                n1 = (rnd.Next() % numberOfTasks);
+                n2 = (rnd.Next() % numberOfTasks);
 
                 while (n1 == n2)
                 {
-                    n2 = (rnd.Next() % iloscZadan);
+                    n2 = (rnd.Next() % numberOfTasks);
                 }
-                int[] tmp = tablicaZamieniona[n2];
-                tablicaZamieniona = insert(tablicaZamieniona, n2, tablicaZamieniona[n1], iloscZadan);
-                tablicaZamieniona = insert(tablicaZamieniona, n1, tmp, iloscZadan);
-                double cmax2 = obliczCMax(tablicaZamieniona, iloscZadan, iloscMaszyn);
+                int[] tmp = swappedArray[n2];
+                swappedArray = insert(swappedArray, n2, swappedArray[n1], numberOfTasks);
+                swappedArray = insert(swappedArray, n1, tmp, numberOfTasks);
+                double cmax2 = calculateCMax(swappedArray, numberOfTasks, numberOfMachines);
                 // Console.WriteLine($"cmax2 = {cmax2}");
 
                 // Krok 3 - Decyzja: wykonanie
 
-                double pp = czyZamienicKolejnosc(cmax1, cmax2, temperatura);
+                double pp = DoReorder(cmax1, cmax2, temperatura);
 
-                double sprawdzaniePrawdopodobienstwa = (rnd.Next() % 101); // generuje losowy numer miedzy 0 a 100
-                sprawdzaniePrawdopodobienstwa = sprawdzaniePrawdopodobienstwa / 100; // dzieli go przez 100 aby uzyskac zakres <0,1>
+                double probabilityChecking = (rnd.Next() % 101); // generuje losowy numer miedzy 0 a 100
+                probabilityChecking = probabilityChecking / 100; // dzieli go przez 100 aby uzyskac zakres <0,1>
 
-                if (pp < sprawdzaniePrawdopodobienstwa)
+                if (pp < probabilityChecking)
                 {
-                    for (int i = 0; i < iloscZadan; i++)
-                        for (int j = 0; j < iloscMaszyn; j++)
-                            tablicaZamieniona[i][j] = tablicaPodstawowa[i][j];
+                    for (int i = 0; i < numberOfTasks; i++)
+                        for (int j = 0; j < numberOfMachines; j++)
+                            swappedArray[i][j] = basicArray[i][j];
 
                     temperatura = temperatura * mi;
-/*                    Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {sprawdzaniePrawdopodobienstwa}");
+/*                    Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {probabilityChecking}");
                     Console.WriteLine("Aktualna temperatura: {temperatura}");
                     Console.WriteLine("Nie amieniam tablice.");*/
-                    wynikKoncowy = 0;
+                    finalScore = 0;
                 }
                 else
                 {
-                    for (int i = 0; i < iloscZadan; i++)
-                        for (int j = 0; j < iloscMaszyn; j++)
-                            tablicaPodstawowa[i][j] = tablicaZamieniona[i][j];
+                    for (int i = 0; i < numberOfTasks; i++)
+                        for (int j = 0; j < numberOfMachines; j++)
+                            basicArray[i][j] = swappedArray[i][j];
 
                     temperatura = temperatura * mi;
- /*                   Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {sprawdzaniePrawdopodobienstwa}");
+ /*                   Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {probabilityChecking}");
                     Console.WriteLine("Aktualna temperatura: {temperatura}");
                     Console.WriteLine("Zamieniam tablice.");*/
-                    wynikKoncowy = 1;
+                    finalScore = 1;
                 }
 
-                //wypiszElementy(tablicaPodstawowa, iloscZadan, iloscMaszyn);
-                //wypiszElementy(tablicaZamieniona, iloscZadan, iloscMaszyn);
+                //wypiszElementy(basicArray, numberOfTasks, numberOfMachines);
+                //wypiszElementy(swappedArray, numberOfTasks, numberOfMachines);
             }
 
-            double cMaxKoncowe = 0;
+            double cMaxFinal = 0;
 
-            if (wynikKoncowy == 0)
-                cMaxKoncowe = obliczCMax(tablicaPodstawowa, iloscZadan, iloscMaszyn);
-            if (wynikKoncowy == 1)
-                cMaxKoncowe = obliczCMax(tablicaZamieniona, iloscZadan, iloscMaszyn);
+            if (finalScore == 0)
+                cMaxFinal = calculateCMax(basicArray, numberOfTasks, numberOfMachines);
+            if (finalScore == 1)
+                cMaxFinal = calculateCMax(swappedArray, numberOfTasks, numberOfMachines);
 
-            Console.WriteLine("Cmax = " + cMaxKoncowe);
+            Console.WriteLine("Cmax = " + cMaxFinal);
 
-            return tablicaPodstawowa;
+            return basicArray;
         }
 
     }

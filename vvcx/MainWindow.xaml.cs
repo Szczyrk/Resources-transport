@@ -239,23 +239,141 @@ namespace vvcx
             int[][] array = new int[orders.OrdersList.Count][];
             for (int i = 0; i < orders.OrdersList.Count; i++)
                 array[i] = new int[1] { i };
-            int[][] trasa = simulatedAnnealing.SimulatedAnnealingAlg(array, 30, orders.OrdersList.Count, 1);
+            int[][] trasa = simulatedAnnealing.SimulatedAnnealingAlg(array, 40, orders.OrdersList.Count, 1);
             string SA = simulatedAnnealing.wypiszElementy(trasa, orders.OrdersList.Count, 1);
             List<int> tmp = new List<int>();
             for (int i = 0; i < orders.OrdersList.Count; i++)
             {
                 tmp.Add(trasa[i][0]);
             }
-
-            for (int i = 0; i < orders.OrdersList.Count; i++)
-            {
-                    results.Items.Add(orders.OrdersList[trasa[i][0]]);
-            }
+            List<Tuple<string, List<string>>> showrRote = ShowRote(tmp);
+            for (int i = 0; i < showrRote.Count; i++)
+                results.Items.Add(showrRote[i]);
 
             resultsLabel.Visibility = Visibility.Visible;
             results.Visibility = Visibility.Visible;
 
             setState(UIState.Results);
+        }
+
+        string TimeToString(double time)
+        {
+            return $"{Math.Floor(time/60)}min {time%60}s";
+        }
+
+        public List<Tuple<string, List<string>>> ShowRote(List<int> OrdersList)
+        {
+            List<Tuple<string,List<string>>> orders = new List<Tuple<string, List<string>>>();
+            List<string> productsFromShop = new List<string>();
+            double distance = 0;
+            double sumWeight = 0;
+            int globalNumberOfPickedProducts = 0;
+            string tmp = "null";
+
+            for (int i = 0; i < OrdersList.Count; i++)
+            {
+
+                Order order = MainWindow.Orders.OrdersList[OrdersList[i]];
+                Order orderPrevious = null;
+                Order orderNext = null;
+                if (i - 1 >= 0)
+                    orderPrevious = MainWindow.Orders.OrdersList[OrdersList[i - 1]];
+                if (i + 1 < OrdersList.Count)
+                    orderNext = MainWindow.Orders.OrdersList[OrdersList[i + 1]];
+
+                if (i - 1 >= 0)
+                {
+                    if (sumWeight > 0 && orderPrevious.Name != order.Name)
+                    {
+                        if (MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
+                        {
+                            distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
+                            Tuple<string, List<string>> shopGo = new Tuple<string, List<string>>(tmp, new List<string>(productsFromShop));
+                            orders.Add(shopGo);
+                            productsFromShop.Clear();
+                            tmp = $"{orderPrevious.Name} -> {order.Name} = {TimeToString(MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])}";
+                            Console.WriteLine(tmp);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{orderPrevious.Name} -> Budowa = {TimeToString(MainWindow.distanceMatrix[orderPrevious.Shop.Id][0])}");
+                            Console.WriteLine(tmp);
+
+                            Tuple<string, List<string>> shopGo = new Tuple<string, List<string>>(tmp, new List<string>(productsFromShop));
+                            orders.Add(shopGo);
+                            tmp = $"Budowa -> {order.Name} = {TimeToString(MainWindow.distanceMatrix[0][order.Shop.Id])}";
+                            Tuple<string, List<string>> shopBack = new Tuple<string, List<string>>($"{orderPrevious.Name} -> Budowa = {TimeToString(MainWindow.distanceMatrix[orderPrevious.Shop.Id][0])}", null);
+                            orders.Add(shopBack);
+                            productsFromShop.Clear();
+
+                            distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][0];//do budowy
+                            distance += MainWindow.distanceMatrix[0][order.Shop.Id]; // do sklepu
+                            sumWeight = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    distance += MainWindow.distanceMatrix[0][order.Shop.Id];
+              
+                    tmp = $"Budowa -> {order.Shop.Name} = {TimeToString(MainWindow.distanceMatrix[0][order.Shop.Id])}";
+                    Console.WriteLine(tmp);
+                }
+
+
+                Product product = order.OrderedProducts.Item1;
+                int count = order.OrderedProducts.Item2 - globalNumberOfPickedProducts;
+                //Console.WriteLine($"Count: {count}   {order.OrderedProducts[j].Item2}  -   {globalNumberOfPickedProducts}");
+                sumWeight += count * product.Weight;
+
+                if (sumWeight >= 1000)
+                {
+                    int numberOfUnpickedProducts = 0;
+                    distance += MainWindow.distanceMatrix[order.Shop.Id][0];
+
+                    while (sumWeight > 1000)
+                    {
+                        numberOfUnpickedProducts++;
+                        sumWeight -= product.Weight;
+                    }
+                    globalNumberOfPickedProducts += (count - numberOfUnpickedProducts);
+
+                    sumWeight = 0;
+                    Console.WriteLine($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} kg");
+                    productsFromShop.Add($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} kg");
+                    Console.WriteLine($"{order.Name} -> Budowa = {TimeToString(MainWindow.distanceMatrix[order.Shop.Id][0])}");
+                    Tuple<string, List<string>> shopGo = new Tuple<string, List<string>>(tmp, new List<string>(productsFromShop));
+                    orders.Add(shopGo);
+                    Tuple<string, List<string>> shopBack = new Tuple<string, List<string>>($"{order.Name} -> Budowa = {TimeToString(MainWindow.distanceMatrix[order.Shop.Id][0])}", null);
+                    orders.Add(shopBack);
+                    productsFromShop.Clear();
+                    Console.WriteLine($"Budowa -> {order.Name} = {TimeToString(MainWindow.distanceMatrix[0][order.Shop.Id])}");
+                    count = numberOfUnpickedProducts;
+                }
+                else
+                {
+                    Console.WriteLine($"{product.Name}: {count} - {count * product.Weight} kg");
+                    productsFromShop.Add($"{product.Name}: {count} - {count * product.Weight} kg");
+                    count = 0;
+                }
+                //Console.WriteLine($"Count: {count}");
+                if (count > 0)
+                    i--;
+                else
+                    globalNumberOfPickedProducts = 0;
+                if (i == OrdersList.Count - 1)
+                {
+                    Console.WriteLine($"{order.Name} -> Budowa = {TimeToString(MainWindow.distanceMatrix[order.Shop.Id][0])}");
+                    Tuple<string, List<string>> shopGo = new Tuple<string, List<string>>(tmp, new List<string>(productsFromShop));
+                    orders.Add(shopGo);
+                    Tuple<string, List<string>> shopBack = new Tuple<string, List<string>>($"{order.Name} -> Budowa = {TimeToString(MainWindow.distanceMatrix[order.Shop.Id][0])}", null);
+                    orders.Add(shopBack);
+                    distance += (MainWindow.distanceMatrix[order.Shop.Id][0]);
+                }
+            }
+            totalTime.Text = TimeToString(distance);
+            Console.WriteLine("Czas na wszystkie zelcenia: " + distance);
+            return orders;
         }
 
         void ShowMatrix(List<Shop> shopList)

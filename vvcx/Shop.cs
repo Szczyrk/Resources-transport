@@ -28,6 +28,17 @@ namespace vvcx
             Longitude = longitude;
             Products = products;
         }
+
+        public Shop(Shop shop)
+        {
+            Name = shop.Name;
+            City = shop.City;
+            Address = shop.Address;
+            Latitude = shop.Latitude;
+            Longitude = shop.Longitude;
+            Products = new List<Product>(shop.Products);
+        }
+
         public string Name { get; set; }
         public string City { get; set; }
         public string Address { get; set; }

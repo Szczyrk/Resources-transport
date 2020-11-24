@@ -174,7 +174,7 @@
                Background="#FF74007A"  Foreground="White" Padding="3 3 3 3" Margin="15 0 15 0" />
 
         <ListBox x:Name="results" Visibility="Visible" Grid.Row="2" Grid.Column="3" HorizontalContentAlignment="Stretch"
-             Grid.ColumnSpan="2" Grid.RowSpan="7"   Margin="15 0 15 0" ItemsSource="{Binding OrdersList}">
+             Grid.ColumnSpan="2" Grid.RowSpan="7"   Margin="15 0 15 0" ItemsSource="{DynamicResource Self}">
 
             <ListBox.ItemTemplate>
                 <DataTemplate>
@@ -183,23 +183,26 @@
                             <TextBlock Text="" TextAlignment="Center" FontSize="15" Foreground="White"
                      Width="20" Padding="2 2 2 2"  Background="#FF74007A"/>
                             <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White"
-                         Padding="7 2 2 2" Text="{Binding Name}"/>
+                         Padding="7 2 2 2" Text="{Binding Item1}"/>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Background="#FF323232" HorizontalAlignment="Stretch" Margin="5 5 0 0"> 
-                            <TextBlock FontSize="15" HorizontalAlignment="Stretch" Width="220"  Foreground="White" Background="#FF74007A"
-                         Padding="7 2 2 2" Text="{Binding OrderedProducts.Item1.Name}"/>
-                            <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White"  Width="30" Background="#FF74007A"
-                         Padding="7 2 2 2" Text="{Binding OrderedProducts.Item1.Weight}"/>
-                            <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White" Background="#FF74007A" Width="30"
-                   Padding="0 2 2 2" Text="kg"/>
-                            <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White"
-                         Padding="7 2 2 2" Text="{Binding OrderedProducts.Item2}"/>
-                            <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White"
-                   Padding="0 2 2 2" Text=" szt."/>
+                      <ListBox x:Name="addedPoints1" Visibility="Visible" HorizontalContentAlignment="Stretch" ItemsSource="{Binding Item2}">
+                        <ListBox.ItemTemplate>
+                          <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Background="#FF323232" HorizontalAlignment="Stretch">
+                              <TextBlock FontSize="15" HorizontalAlignment="Stretch"  Foreground="White" Background="#FF74007A"
+         Padding="7 2 2 2" Text="{Binding}"/>
 
-                        </StackPanel>
-                        
+                            </StackPanel>
+                          </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.Background>
+                          <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+                        </ListBox.Background>
+                        <ListBox.BorderBrush>
+                          <SolidColorBrush Color="#FF383737" Opacity="0.8"/>
+                        </ListBox.BorderBrush>
+                      </ListBox>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
@@ -302,8 +305,7 @@
                Padding="3 3 3 3"/>
 
         <StackPanel x:Name="TotalTimePanel" Visibility="Collapsed" Grid.Row="2" Grid.Column="6" Orientation="Horizontal" Background="#FF323232" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <TextBlock x:Name="totalTime" Margin="30 0 0 0" Opacity ="1" Text="999" TextAlignment="Center"  VerticalAlignment="Center"  Foreground="White" FontSize="35" Width="200"/>
-            <TextBlock Text="min" VerticalAlignment="Center"   FontSize="35" Foreground="White"></TextBlock>
+            <TextBlock x:Name="totalTime" Margin="30 0 0 0" Opacity ="1" Text="999" VerticalAlignment="Center"  Foreground="White" FontSize="35" HorizontalAlignment="Center" TextAlignment="Center"/>
         </StackPanel>
 
         <ListBox x:Name="shopsList" Visibility="Visible" HorizontalContentAlignment="Stretch"
@@ -386,7 +388,7 @@
                         <TextBox x:Name="productCount" Margin="20 0 0 0" HorizontalAlignment="Stretch" Width="50"  Padding="2 2 2 2">
             </TextBox>
             <TextBlock FontSize="15" HorizontalAlignment="Right" Foreground="White" 
-                           Padding="7 2 2 2" Text="sztuk/sztuki"/>
+                           Padding="7 2 2 2" Text="szt."/>
           </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>
