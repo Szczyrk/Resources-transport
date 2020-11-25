@@ -45,6 +45,7 @@ namespace vvcx
         private List<Shop> shopsFromBD;
         Thread getShopsFormBD;
         Thread getDistanceMatrix;
+        List<Location> locations = new List<Location>();
 
         internal static Orders Orders { get => orders; set => orders = value; }
 
@@ -76,6 +77,9 @@ namespace vvcx
                 Orders.OrdersList.RemoveAt(i);
             }
             Orders.OrdersList.Clear();
+            addedPoints.Items.Refresh();
+
+            locations.Clear();
 
             counter = 1;
             resultsLabel.Visibility = Visibility.Collapsed;
@@ -130,10 +134,14 @@ namespace vvcx
         private void createAndDisplayPushpin(double longitude, double latitude)
         {
             Location location = new Location(longitude, latitude);
-            Pushpin pin = new Pushpin();
-            pin.Location = location;
-            pin.Content = Convert.ToString(counter++);
-            myMap.Children.Add(pin);
+            if (!locations.Any(l => l.Latitude == location.Latitude && l.Longitude == location.Longitude))
+            {
+                locations.Add(location);
+                Pushpin pin = new Pushpin();
+                pin.Location = location;
+                pin.Content = Convert.ToString(counter++);
+                myMap.Children.Add(pin);
+            }
         }
 
         private void ShopItemClicked(object sender, SelectionChangedEventArgs e)
@@ -492,10 +500,14 @@ namespace vvcx
         private void ReturnToOrdersButtonClicked(object sender, RoutedEventArgs e)
         {
             setState(UIState.ShopSearch);
+            results.Items.Clear();
         }
 
         private void returnToWorkplaceSearchButtonClicked(object sender, RoutedEventArgs e)
         {
+            DisplayedOrders ordersToDisplay = new DisplayedOrders();
+            Resources["DisplayedOrders"] = ordersToDisplay.Orders;
+
             for (int i = (myMap.Children.Count - 1); i >= 0; i--)
             {
                 myMap.Children.RemoveAt(i);
@@ -506,6 +518,11 @@ namespace vvcx
             }
             searchWorkPlace.Text = "";
             Orders.OrdersList.Clear();
+            locations.Clear();
+            addedPoints.Items.Refresh();
+
+
+
             counter = 0;
             setState(UIState.Initial);
             shops = new Dictionary<string, Shop>();
