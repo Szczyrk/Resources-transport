@@ -90,7 +90,7 @@ namespace vvcx
                     distance += (MainWindow.distanceMatrix[order.Shop.Id][0]);
                 }
             }
-            Console.WriteLine("Czas na wszystkie zelcenia: " + distance);
+            //Console.WriteLine("Czas na wszystkie zelcenia: " + distance);
             return distance;
         }
 

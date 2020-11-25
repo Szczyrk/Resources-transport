@@ -20,6 +20,7 @@ using System.Xml.XPath;
 using System.Windows.Controls.Primitives;
 using vvcx.BD;
 using System.Windows.Media.TextFormatting;
+using System.Threading;
 
 namespace vvcx
 {
@@ -41,6 +42,9 @@ namespace vvcx
         private static Orders orders;
         private BrushConverter brushConverter;
         public static double[][] distanceMatrix;
+        private List<Shop> shopsFromBD;
+        Thread getShopsFormBD;
+        Thread getDistanceMatrix;
 
         internal static Orders Orders { get => orders; set => orders = value; }
 
@@ -52,7 +56,8 @@ namespace vvcx
             Orders = new Orders();
 
             SQLite.CreateBD();
-
+            getShopsFormBD = new Thread(() => shopsFromBD = SQLite.GetShops());
+            getShopsFormBD.Start();
             InitializeComponent();
             setState(UIState.Initial);
         }
@@ -103,7 +108,8 @@ namespace vvcx
             Shop workPlace = new Shop(0, "Budowa", city, street, coordinates.Item1, coordinates.Item2, null);
             createAndDisplayPushpin(coordinates.Item1, coordinates.Item2);
             shops.Add("workplace", workPlace);
-            foreach (Shop shop in SQLite.GetShops())
+            getShopsFormBD.Join();
+            foreach (Shop shop in shopsFromBD)
             {
                 shops[shop.Name] = shop;
             }
@@ -115,7 +121,8 @@ namespace vvcx
                     shopsList.Items.Add(item.Value);
                 }
             }
-
+            getDistanceMatrix = new Thread(() =>  distanceMatrix = geoHandler.getDistanceMatrix(shops.Select(s => s.Value).ToList()));
+            getDistanceMatrix.Start();
             setState(UIState.ShopSearch);
 
         }
@@ -232,14 +239,13 @@ namespace vvcx
                 return;
             }
 
-            List<Shop> shopList = shops.Select(s => s.Value).ToList();
-            distanceMatrix = geoHandler.getDistanceMatrix(shopList);
-
+            getDistanceMatrix.Join();
             SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
             int[][] array = new int[orders.OrdersList.Count][];
             for (int i = 0; i < orders.OrdersList.Count; i++)
                 array[i] = new int[1] { i };
-            int[][] trasa = simulatedAnnealing.SimulatedAnnealingAlg(array, 40, orders.OrdersList.Count, 1);
+            int[][] trasa = array;
+            trasa = simulatedAnnealing.SimulatedAnnealingAlg(trasa, 50, orders.OrdersList.Count, 1);
             string SA = simulatedAnnealing.wypiszElementy(trasa, orders.OrdersList.Count, 1);
             List<int> tmp = new List<int>();
             for (int i = 0; i < orders.OrdersList.Count; i++)

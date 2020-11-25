@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Xml;
 using System.Net;
 using System.Xml.XPath;
@@ -72,14 +72,19 @@ namespace vvcx
 
             for (int i = 0; i < (geoPoints.Count() - 1); i++)
             {
-                for (int j = (i + 1); j <= (geoPoints.Count() - 1); j++)
+                new Thread(() =>
                 {
-                    string url = routeUrlPrefix + wayPointPart + Convert.ToString(1) + "=" + Convert.ToString(geoPoints[i].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[i].Longitude).Replace(',', '.') + wayPointPart + Convert.ToString(2) + "=" + Convert.ToString(geoPoints[j].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[j].Longitude).Replace(',', '.') + urlKeyPart + bingMapsKey + urlXmlOutputPart;
-                    XmlDocument response = getXmlResponse(url);
-                    XmlNodeList duration = response.GetElementsByTagName(travelDuration);
-                    GeoRouteNode routeNode = new GeoRouteNode(geoPoints[i], geoPoints[j], Convert.ToDouble(duration[0].InnerText));
-                    routeNodes.Add(routeNode);
-                }
+                    for (int j = (i + 1); j <= (geoPoints.Count() - 1); j++)
+                    {
+                        if (i == j)
+                            continue;
+                        string url = routeUrlPrefix + wayPointPart + Convert.ToString(1) + "=" + Convert.ToString(geoPoints[i].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[i].Longitude).Replace(',', '.') + wayPointPart + Convert.ToString(2) + "=" + Convert.ToString(geoPoints[j].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[j].Longitude).Replace(',', '.') + urlKeyPart + bingMapsKey + urlXmlOutputPart;
+                        XmlDocument response = getXmlResponse(url);
+                        XmlNodeList duration = response.GetElementsByTagName(travelDuration);
+                        GeoRouteNode routeNode = new GeoRouteNode(geoPoints[i], geoPoints[j], Convert.ToDouble(duration[0].InnerText));
+                        routeNodes.Add(routeNode);
+                    }
+                }).Start();
             }
 
             return routeNodes;
@@ -88,21 +93,36 @@ namespace vvcx
         public double[][] getDistanceMatrix(List<Shop> geoPoints)
         {
             double[][] distanceMatrix = new double[geoPoints.Count][];
-
+            List<Thread> Threads = new List<Thread>();
             for (int i = 0; i < geoPoints.Count(); i++)
             {
-                distanceMatrix[i] = new double[geoPoints.Count];
-                for (int j = 0; j < geoPoints.Count(); j++)
+                int k = i;
+                Thread thread = new Thread(() =>
                 {
-                    Console.WriteLine($"{geoPoints[i].Name} - {geoPoints[j].Name}");
-                    string url = routeUrlPrefix + wayPointPart + Convert.ToString(1) + "=" + Convert.ToString(geoPoints[i].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[i].Longitude).Replace(',', '.') + wayPointPart + Convert.ToString(2) + "=" + Convert.ToString(geoPoints[j].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[j].Longitude).Replace(',', '.') + urlKeyPart + bingMapsKey + urlXmlOutputPart;
-                    XmlDocument response = getXmlResponse(url);
-                    XmlNodeList duration = response.GetElementsByTagName(travelDuration);
-                    distanceMatrix[i][j] = Convert.ToDouble(duration[0].InnerText);
-                }
+                    ThreadWork(k, ref distanceMatrix, geoPoints);
+                });
+                Threads.Add(thread);
+                thread.Start();
             }
-
+            foreach (Thread thread in Threads)
+            {
+                thread.Join();
+            }
             return distanceMatrix;
+        }
+        void ThreadWork(int i, ref double[][] distanceMatrix, List<Shop> geoPoints)
+        {
+            distanceMatrix[i] = new double[geoPoints.Count];
+            for (int j = 0; j < geoPoints.Count(); j++)
+            {
+                if (i == j)
+                    continue;
+                Console.WriteLine($"{geoPoints[i].Name} - {geoPoints[j].Name}");
+                string url = routeUrlPrefix + wayPointPart + Convert.ToString(1) + "=" + Convert.ToString(geoPoints[i].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[i].Longitude).Replace(',', '.') + wayPointPart + Convert.ToString(2) + "=" + Convert.ToString(geoPoints[j].Latitude).Replace(',', '.') + "," + Convert.ToString(geoPoints[j].Longitude).Replace(',', '.') + urlKeyPart + bingMapsKey + urlXmlOutputPart;
+                XmlDocument response = getXmlResponse(url);
+                XmlNodeList duration = response.GetElementsByTagName(travelDuration);
+                distanceMatrix[i][j] = Convert.ToDouble(duration[0].InnerText);
+            }
         }
 
         private XmlDocument getXmlResponse(string url)
