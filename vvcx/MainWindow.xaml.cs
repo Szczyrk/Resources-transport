@@ -296,8 +296,8 @@ namespace vvcx
                         }
                         else
                         {
-                            Console.WriteLine($"{orderPrevious.Name} -> Budowa = {TimeToString(MainWindow.distanceMatrix[orderPrevious.Shop.Id][0])}");
-                            Console.WriteLine(tmp);
+                            Console.WriteLine($"{orderPrevious.Name} -> Budowa = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][0]}");
+                            Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");
 
                             Tuple<string, List<string>> shopGo = new Tuple<string, List<string>>(tmp, new List<string>(productsFromShop));
                             orders.Add(shopGo);
@@ -347,7 +347,8 @@ namespace vvcx
                     Tuple<string, List<string>> shopBack = new Tuple<string, List<string>>($"{order.Name} -> Budowa = {TimeToString(MainWindow.distanceMatrix[order.Shop.Id][0])}", null);
                     orders.Add(shopBack);
                     productsFromShop.Clear();
-                    Console.WriteLine($"Budowa -> {order.Name} = {TimeToString(MainWindow.distanceMatrix[0][order.Shop.Id])}");
+                    tmp = $"Budowa -> {order.Name} = {TimeToString(MainWindow.distanceMatrix[0][order.Shop.Id])}";
+                    Console.WriteLine(tmp);
                     count = numberOfUnpickedProducts;
                 }
                 else
