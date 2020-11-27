@@ -46,6 +46,9 @@ namespace vvcx
         Thread getShopsFormBD;
         Thread getDistanceMatrix;
         List<Location> locations = new List<Location>();
+        private static int[][] trasa;
+        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
+        Thread threadOptimazlizum;
 
         internal static Orders Orders { get => orders; set => orders = value; }
 
@@ -125,7 +128,7 @@ namespace vvcx
                     shopsList.Items.Add(item.Value);
                 }
             }
-            getDistanceMatrix = new Thread(() =>  distanceMatrix = geoHandler.getDistanceMatrix(shops.Select(s => s.Value).ToList()));
+            getDistanceMatrix = new Thread(() => distanceMatrix = geoHandler.getDistanceMatrix(shops.Select(s => s.Value).ToList()));
             getDistanceMatrix.Start();
             setState(UIState.ShopSearch);
 
@@ -209,7 +212,33 @@ namespace vvcx
             else
             {
                 MessageBox.Show("Nie złożono żadnego zamówienia lub podano błędne ilości.");
+                return;
             }
+            int[][] array = new int[orders.OrdersList.Count][];
+            for (int i = 0; i < orders.OrdersList.Count; i++)
+            {
+                if (trasa != null && trasa.Length > i)
+                    array[i] = new int[1] { trasa[i][0] };
+                else
+                    array[i] = new int[1] { i };
+            }
+            trasa = array;
+
+            if (!getDistanceMatrix.IsAlive)
+            {
+                if (threadOptimazlizum != null && threadOptimazlizum.IsAlive)
+                    threadOptimazlizum.Abort();
+                threadOptimazlizum = new Thread(() =>
+                {
+                    while (true)
+                        trasa = trasaOptimalizum(ref trasa);
+                });
+                threadOptimazlizum.Start();
+            }
+        }
+        int[][] trasaOptimalizum(ref int[][] trasa)
+        {
+            return simulatedAnnealing.SimulatedAnnealingAlg(trasa, 300000, orders.OrdersList.Count, 1);
         }
 
         // function source: https://docs.microsoft.com/en-us/dotnet/desktop/wpf/data/how-to-find-datatemplate-generated-elements?redirectedfrom=MSDN&view=netframeworkdesktop-4.8
@@ -248,12 +277,7 @@ namespace vvcx
             }
 
             getDistanceMatrix.Join();
-            SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
-            int[][] array = new int[orders.OrdersList.Count][];
-            for (int i = 0; i < orders.OrdersList.Count; i++)
-                array[i] = new int[1] { i };
-            int[][] trasa = array;
-            trasa = simulatedAnnealing.SimulatedAnnealingAlg(trasa, 50, orders.OrdersList.Count, 1);
+            trasa = simulatedAnnealing.SimulatedAnnealingAlg(trasa, 3000, orders.OrdersList.Count, 1);
             string SA = simulatedAnnealing.wypiszElementy(trasa, orders.OrdersList.Count, 1);
             List<int> tmp = new List<int>();
             for (int i = 0; i < orders.OrdersList.Count; i++)
@@ -272,12 +296,12 @@ namespace vvcx
 
         string TimeToString(double time)
         {
-            return $"{Math.Floor(time/60)}min {time%60}s";
+            return $"{Math.Floor(time / 60)}min {time % 60}s";
         }
 
         public List<Tuple<string, List<string>>> ShowRote(List<int> OrdersList)
         {
-            List<Tuple<string,List<string>>> orders = new List<Tuple<string, List<string>>>();
+            List<Tuple<string, List<string>>> orders = new List<Tuple<string, List<string>>>();
             List<string> productsFromShop = new List<string>();
             double distance = 0;
             double sumWeight = 0;
@@ -299,7 +323,7 @@ namespace vvcx
                 {
                     if (sumWeight > 0 && orderPrevious.Name != order.Name)
                     {
-                        if (MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
+                        if (4 * MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
                         {
                             distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
                             Tuple<string, List<string>> shopGo = new Tuple<string, List<string>>(tmp, new List<string>(productsFromShop));
@@ -329,7 +353,7 @@ namespace vvcx
                 else
                 {
                     distance += MainWindow.distanceMatrix[0][order.Shop.Id];
-              
+
                     tmp = $"Budowa -> {order.Shop.Name} = {TimeToString(MainWindow.distanceMatrix[0][order.Shop.Id])}";
                     Console.WriteLine(tmp);
                 }

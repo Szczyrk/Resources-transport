@@ -29,7 +29,7 @@ namespace vvcx
                 {
                     if (sumWeight > 0 && orderPrevious.Name != order.Name)
                     {
-                        if (MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
+                        if (4 *MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
                         {
                             distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
 /*                            Console.WriteLine($"{orderPrevious.Name} -> {order.Name} = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id]}");*/
@@ -193,16 +193,19 @@ namespace vvcx
                 double cmax1 = calculateCMax(basicArray, numberOfTasks, numberOfMachines);
                 // Console.WriteLine($"cmax1 = {cmax1}");
                 Random rnd = new Random();
-                n1 = (rnd.Next() % numberOfTasks);
-                n2 = (rnd.Next() % numberOfTasks);
-
-                while (n1 == n2)
+                for (int i = 0; i < rnd.Next() % 16; i++)
                 {
+                    n1 = (rnd.Next() % numberOfTasks);
                     n2 = (rnd.Next() % numberOfTasks);
+
+                    while (n1 == n2)
+                    {
+                        n2 = (rnd.Next() % numberOfTasks);
+                    }
+                    int[] tmp = swappedArray[n2];
+                    swappedArray = insert(swappedArray, n2, swappedArray[n1], numberOfTasks);
+                    swappedArray = insert(swappedArray, n1, tmp, numberOfTasks);
                 }
-                int[] tmp = swappedArray[n2];
-                swappedArray = insert(swappedArray, n2, swappedArray[n1], numberOfTasks);
-                swappedArray = insert(swappedArray, n1, tmp, numberOfTasks);
                 double cmax2 = calculateCMax(swappedArray, numberOfTasks, numberOfMachines);
                 // Console.WriteLine($"cmax2 = {cmax2}");
 
