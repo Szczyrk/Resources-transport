@@ -6,18 +6,19 @@ namespace vvcx
     public class SimulatedAnnealing
     {
         double T_END = 0.01;
+        public double cMaxFinal;
 
         public double CalculateDistanceForOrders(List<int> OrdersList)
         {
             double distance = 0;
             double sumWeight = 0;
-/*            Console.WriteLine();
-            Console.WriteLine("GetTime: " + OrdersList.Count);
-            Console.WriteLine();*/
+            /*            Console.WriteLine();
+                        Console.WriteLine("GetTime: " + OrdersList.Count);
+                        Console.WriteLine();*/
             int globalNumberOfPickedProducts = 0;
             for (int i = 0; i < OrdersList.Count; i++)
             {
-                
+
                 Order order = MainWindow.Orders.OrdersList[OrdersList[i]];
                 Order orderPrevious = null;
                 Order orderNext = null;
@@ -29,15 +30,15 @@ namespace vvcx
                 {
                     if (sumWeight > 0 && orderPrevious.Name != order.Name)
                     {
-                        if (4 *MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
+                        if (4 * MainWindow.distanceMatrix[orderPrevious.Shop.Id][0] > MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id])
                         {
                             distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id];//do nowego sklepu
-/*                            Console.WriteLine($"{orderPrevious.Name} -> {order.Name} = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id]}");*/
+                            /*                            Console.WriteLine($"{orderPrevious.Name} -> {order.Name} = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][order.Shop.Id]}");*/
                         }
                         else
                         {
-/*                            Console.WriteLine($"{orderPrevious.Name} -> Budowa = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][0]}");
-                            Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
+                            /*                            Console.WriteLine($"{orderPrevious.Name} -> Budowa = {MainWindow.distanceMatrix[orderPrevious.Shop.Id][0]}");
+                                                        Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
                             distance += MainWindow.distanceMatrix[orderPrevious.Shop.Id][0];//do budowy
                             distance += MainWindow.distanceMatrix[0][order.Shop.Id]; // do sklepu
                             sumWeight = 0;
@@ -47,9 +48,9 @@ namespace vvcx
                 else
                 {
                     distance += MainWindow.distanceMatrix[0][order.Shop.Id];
-/*                    Console.WriteLine($"Budowa -> {order.Shop.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
+                    /*                    Console.WriteLine($"Budowa -> {order.Shop.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
                 }
-                  
+
 
                 Product product = order.OrderedProducts.Item1;
                 int count = order.OrderedProducts.Item2 - globalNumberOfPickedProducts;
@@ -69,14 +70,14 @@ namespace vvcx
                     globalNumberOfPickedProducts += (count - numberOfUnpickedProducts);
 
                     sumWeight = 0;
-/*                    Console.WriteLine($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} KG");
-                    Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");
-                    Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
+                    /*                    Console.WriteLine($"{product.Name}: {count - numberOfUnpickedProducts} - {(count - numberOfUnpickedProducts) * product.Weight} KG");
+                                        Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");
+                                        Console.WriteLine($"Budowa -> {order.Name} = {MainWindow.distanceMatrix[0][order.Shop.Id]}");*/
                     count = numberOfUnpickedProducts;
                 }
                 else
                 {
-/*                    Console.WriteLine($"{product.Name}: {count} - {count * product.Weight} KG");*/
+                    /*                    Console.WriteLine($"{product.Name}: {count} - {count * product.Weight} KG");*/
                     count = 0;
                 }
                 //Console.WriteLine($"Count: {count}");
@@ -86,7 +87,7 @@ namespace vvcx
                     globalNumberOfPickedProducts = 0;
                 if (i == OrdersList.Count - 1)
                 {
-/*                    Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");*/
+                    /*                    Console.WriteLine($"{order.Name} -> Budowa = {MainWindow.distanceMatrix[order.Shop.Id][0]}");*/
                     distance += (MainWindow.distanceMatrix[order.Shop.Id][0]);
                 }
             }
@@ -146,17 +147,15 @@ namespace vvcx
 
         double DoReorder(double current, double novel, double temperatura)
         {
-            if (novel < current)
+            if (novel >= current)
             {
                 return 1;
-                //return Math.Exp((current - novel)/temperatura);
-            };
-
-            if (novel >= current)
+            }
+            //return Math.Exp((current - novel)/temperatura);   
+            else
             {
                 return Math.Exp((current - novel) / temperatura);
             }
-            return 0;
         }
 
 
@@ -165,7 +164,7 @@ namespace vvcx
             // Krok 1 - Inicjalizacja
 
             double mi = 0.99;
-
+            Random rnd = new Random();
             int[][] basicArray = new int[numberOfTasks][];
             for (int k = 0; k < numberOfTasks; k++)
                 basicArray[k] = new int[numberOfMachines];
@@ -192,16 +191,17 @@ namespace vvcx
 
                 double cmax1 = calculateCMax(basicArray, numberOfTasks, numberOfMachines);
                 // Console.WriteLine($"cmax1 = {cmax1}");
-                Random rnd = new Random();
-                for (int i = 0; i < rnd.Next() % 16; i++)
+                List<Tuple<int, int>> pars = new List<Tuple<int, int>>();
+                for (int i = 0; i < rnd.Next() % numberOfTasks; i++)
                 {
                     n1 = (rnd.Next() % numberOfTasks);
                     n2 = (rnd.Next() % numberOfTasks);
 
-                    while (n1 == n2)
+                    while (n1 == n2 && !pars.Contains(new Tuple<int, int>(n1, n2)))
                     {
                         n2 = (rnd.Next() % numberOfTasks);
                     }
+                    pars.Add(new Tuple<int, int>(n1, n2));
                     int[] tmp = swappedArray[n2];
                     swappedArray = insert(swappedArray, n2, swappedArray[n1], numberOfTasks);
                     swappedArray = insert(swappedArray, n1, tmp, numberOfTasks);
@@ -213,18 +213,18 @@ namespace vvcx
 
                 double pp = DoReorder(cmax1, cmax2, temperatura);
 
-                double probabilityChecking = (rnd.Next() % 101); // generuje losowy numer miedzy 0 a 100
-                probabilityChecking = probabilityChecking / 100; // dzieli go przez 100 aby uzyskac zakres <0,1>
+                double probabilityChecking = (rnd.Next() % 100); // generuje losowy numer miedzy 0 a 99
+                probabilityChecking = probabilityChecking / 100; // dzieli go przez 100 aby uzyskac zakres <0,1)
 
-                if (pp < probabilityChecking)
+                if (pp == 1)
                 {
                     for (int i = 0; i < numberOfTasks; i++)
                         for (int j = 0; j < numberOfMachines; j++)
                             swappedArray[i][j] = basicArray[i][j];
 
                     temperatura = temperatura * mi;
-/*                    Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {probabilityChecking}");
-                    Console.WriteLine("Aktualna temperatura: {temperatura}");
+                    /*Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {probabilityChecking}");
+                    Console.WriteLine($"Aktualna temperatura: {temperatura}");
                     Console.WriteLine("Nie amieniam tablice.");*/
                     finalScore = 0;
                 }
@@ -235,9 +235,9 @@ namespace vvcx
                             basicArray[i][j] = swappedArray[i][j];
 
                     temperatura = temperatura * mi;
- /*                   Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {probabilityChecking}");
-                    Console.WriteLine("Aktualna temperatura: {temperatura}");
-                    Console.WriteLine("Zamieniam tablice.");*/
+                    /*                   Console.WriteLine($"Prawdop. zwraca: {pp} przeciwko {probabilityChecking}");
+                                       Console.WriteLine("Aktualna temperatura: {temperatura}");
+                                       Console.WriteLine("Zamieniam tablice.");*/
                     finalScore = 1;
                 }
 
@@ -245,15 +245,8 @@ namespace vvcx
                 //wypiszElementy(swappedArray, numberOfTasks, numberOfMachines);
             }
 
-            double cMaxFinal = 0;
-
-            if (finalScore == 0)
-                cMaxFinal = calculateCMax(basicArray, numberOfTasks, numberOfMachines);
-            if (finalScore == 1)
-                cMaxFinal = calculateCMax(swappedArray, numberOfTasks, numberOfMachines);
-
+            cMaxFinal = calculateCMax(basicArray, numberOfTasks, numberOfMachines);
             Console.WriteLine("Cmax = " + cMaxFinal);
-
             return basicArray;
         }
 

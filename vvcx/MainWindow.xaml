@@ -7,7 +7,8 @@
         xmlns:m="clr-namespace:Microsoft.Maps.MapControl.WPF;assembly=Microsoft.Maps.MapControl.WPF"
         Background="#5D5C61"
         mc:Ignorable="d"
-        Title="TSP z algorytmem genetycznym" Height="700" Width="1500">
+        Title="TSP z SA" Height="700" Width="1500"
+        Closing="Application_Exit">
 
   <Grid x:Name="mainGrid">
     <Grid.ColumnDefinitions>

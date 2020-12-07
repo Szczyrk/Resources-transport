@@ -21,6 +21,7 @@ using System.Windows.Controls.Primitives;
 using vvcx.BD;
 using System.Windows.Media.TextFormatting;
 using System.Threading;
+using System.ComponentModel;
 
 namespace vvcx
 {
@@ -48,7 +49,7 @@ namespace vvcx
         List<Location> locations = new List<Location>();
         private static int[][] trasa;
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
-        Thread threadOptimazlizum;
+        Thread optimizationThread;
 
         internal static Orders Orders { get => orders; set => orders = value; }
 
@@ -66,8 +67,19 @@ namespace vvcx
             setState(UIState.Initial);
         }
 
+        public void Application_Exit(object sender, CancelEventArgs e)
+        {
+            optimizationThread.Abort();
+            getShopsFormBD.Abort();
+            getDistanceMatrix.Abort();
+        }
+
         private void removePoints_Click(object sender, RoutedEventArgs e)
         {
+            Console.WriteLine("Thread optimization Abort id:  " + optimizationThread.ManagedThreadId);
+            optimizationThread.Abort();
+            optimizationThread.Join();
+            trasa = null;
             DisplayedOrders ordersToDisplay = new DisplayedOrders();
             Resources["DisplayedOrders"] = ordersToDisplay.Orders;
 
@@ -226,18 +238,45 @@ namespace vvcx
 
             if (!getDistanceMatrix.IsAlive)
             {
-                if (threadOptimazlizum != null && threadOptimazlizum.IsAlive)
-                    threadOptimazlizum.Abort();
-                threadOptimazlizum = new Thread(() =>
+                if (optimizationThread != null && optimizationThread.IsAlive)
                 {
+                    optimizationThread.Abort();
+                    optimizationThread.Join();
+                }
+                optimizationThread = new Thread(() =>
+                {
+                    double cMaxFinal = 0;
+                    int i = 0, imax = 1000;
                     while (true)
-                        trasa = trasaOptimalizum(ref trasa);
+                        try
+                        {
+                            trasa = trasaOptimalizum(ref trasa);
+                            if (simulatedAnnealing.cMaxFinal == cMaxFinal)
+                            {
+                                i++;
+                                if (imax == i)
+                                {
+                                    Console.WriteLine("Koniec szukania trasy");
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                cMaxFinal = simulatedAnnealing.cMaxFinal;
+                                i = 0;
+                            }
+                        }
+                        catch (Exception exc)
+                        {
+                            Console.WriteLine(String.Format("Przerwanie - zwiększenie tablicy. Thread ID: {0}\n", Thread.CurrentThread.ManagedThreadId));
+
+                        }
                 });
-                threadOptimazlizum.Start();
+                optimizationThread.Start();
             }
         }
         int[][] trasaOptimalizum(ref int[][] trasa)
-        {
+        {     
             return simulatedAnnealing.SimulatedAnnealingAlg(trasa, 300000, orders.OrdersList.Count, 1);
         }
 
@@ -529,6 +568,10 @@ namespace vvcx
 
         private void returnToWorkplaceSearchButtonClicked(object sender, RoutedEventArgs e)
         {
+            Console.WriteLine("Thread optimization Abort id:  " + optimizationThread.ManagedThreadId);
+            optimizationThread.Abort();
+            optimizationThread.Join();
+            trasa = null;
             DisplayedOrders ordersToDisplay = new DisplayedOrders();
             Resources["DisplayedOrders"] = ordersToDisplay.Orders;
 
@@ -540,11 +583,11 @@ namespace vvcx
             {
                 Orders.OrdersList.RemoveAt(i);
             }
+
             searchWorkPlace.Text = "";
             Orders.OrdersList.Clear();
             locations.Clear();
             addedPoints.Items.Refresh();
-
 
 
             counter = 0;
