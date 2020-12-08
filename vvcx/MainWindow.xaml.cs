@@ -245,25 +245,26 @@ namespace vvcx
                 }
                 optimizationThread = new Thread(() =>
                 {
-                    double cMaxFinal = 0;
+                    double cMaxFinal = Double.PositiveInfinity;
                     int i = 0, imax = 1000;
                     while (true)
                         try
                         {
-                            trasa = trasaOptimalizum(ref trasa);
-                            if (simulatedAnnealing.cMaxFinal == cMaxFinal)
+                            int[][] tmp = trasaOptimalizum(trasa);
+                            if (simulatedAnnealing.cMaxFinal < cMaxFinal)
+                            {
+                                trasa = tmp;
+                                cMaxFinal = simulatedAnnealing.cMaxFinal;
+                                i = 0;
+                            }
+                            else
                             {
                                 i++;
-                                if (imax == i)
+                              if (imax == i)
                                 {
                                     Console.WriteLine("Koniec szukania trasy");
                                     return;
                                 }
-                            }
-                            else
-                            {
-                                cMaxFinal = simulatedAnnealing.cMaxFinal;
-                                i = 0;
                             }
                         }
                         catch (Exception exc)
@@ -275,7 +276,7 @@ namespace vvcx
                 optimizationThread.Start();
             }
         }
-        int[][] trasaOptimalizum(ref int[][] trasa)
+        int[][] trasaOptimalizum(int[][] trasa)
         {     
             return simulatedAnnealing.SimulatedAnnealingAlg(trasa, 300000, orders.OrdersList.Count, 1);
         }
@@ -316,7 +317,7 @@ namespace vvcx
             }
 
             getDistanceMatrix.Join();
-            trasa = simulatedAnnealing.SimulatedAnnealingAlg(trasa, 3000, orders.OrdersList.Count, 1);
+            //trasa = simulatedAnnealing.SimulatedAnnealingAlg(trasa, 3000, orders.OrdersList.Count, 1);
             string SA = simulatedAnnealing.wypiszElementy(trasa, orders.OrdersList.Count, 1);
             List<int> tmp = new List<int>();
             for (int i = 0; i < orders.OrdersList.Count; i++)

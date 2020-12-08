@@ -147,7 +147,7 @@ namespace vvcx
 
         double DoReorder(double current, double novel, double temperatura)
         {
-            if (novel >= current)
+            if (novel < current)
             {
                 return 1;
             }
@@ -216,7 +216,7 @@ namespace vvcx
                 double probabilityChecking = (rnd.Next() % 100); // generuje losowy numer miedzy 0 a 99
                 probabilityChecking = probabilityChecking / 100; // dzieli go przez 100 aby uzyskac zakres <0,1)
 
-                if (pp == 1)
+                if (pp < probabilityChecking)
                 {
                     for (int i = 0; i < numberOfTasks; i++)
                         for (int j = 0; j < numberOfMachines; j++)
